@@ -9,10 +9,15 @@ import Hero from "./Components/HeroSection/Hero";
 import Token from "./Components/TokenSection/Token";
 import Footer from "./Components/Footer/Footer";
 import { QueueProvider } from "./Components/TokenSection/QueueContext";
+import LoginPopup from "./Components/UserLogin/LoginPopup";
 
 
 
 const App = () => {
+   const handleLogin = (user) => {
+    console.log("User Logged In:", user);
+    // store roles, validate student/admin, generate token, etc.
+  };
     
   return (
     <>
@@ -31,6 +36,7 @@ const App = () => {
     <Token />
     <Footer/>
   </QueueProvider>
+  <LoginPopup onLogin={handleLogin} />
     </>
   );
 };
