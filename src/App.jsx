@@ -8,7 +8,7 @@ import Profile from "./Components/Navbar/Profile";
 import Hero from "./Components/HeroSection/Hero";
 import Token from "./Components/TokenSection/Token";
 import Footer from "./Components/Footer/Footer";
-import TokenCard from "./Components/TokenSection/TokenCard";
+import { QueueProvider } from "./Components/TokenSection/QueueContext";
 
 
 
@@ -16,6 +16,7 @@ const App = () => {
     
   return (
     <>
+    <QueueProvider>
     <BrowserRouter>
       <Navbar />
 
@@ -29,7 +30,7 @@ const App = () => {
     <Hero/>
     <Token />
     <Footer/>
-    <TokenCard/>
+  </QueueProvider>
     </>
   );
 };
