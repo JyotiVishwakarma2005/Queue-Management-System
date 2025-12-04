@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+li{
+ padding: 20px;
+}
+.token{
+            box-shadow: 3px 3px 5px rgb(187, 186, 186), -3px -3px 5px rgb(189, 188, 188);
+}
