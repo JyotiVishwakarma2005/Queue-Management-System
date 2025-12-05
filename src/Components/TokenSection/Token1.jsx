@@ -1,20 +1,49 @@
 import { UserRoundPlus } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
 import { useContext, useState } from "react";
-import { QueueContext } from "./QueueContext";
 import TokenCard from "./TokenCard";
-
+import QueueModal from "./QueueModal";
 
 const Token1 = () => {
-    const { generateToken } = useContext(QueueContext);
-  const [token, setToken] = useState("");
+  const [showQueue, setShowQueue] = useState(false);
+  const [queueData, setQueueData] = useState([]);
+  const [token, setToken] = useState(null);
   const [show, setShow] = useState(false);
 
-  const handleGenerate = () => {
-    const newToken = generateToken("Admission"); // 👈 just change name
-    setToken(newToken);
+  const handleGenerate = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/token/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName: "John Doe", serviceName: "Admission" }) // replace with dynamic userName if needed
+    });
+
+    const data = await res.json();
+    setToken(data.token); // store the generated token
     setShow(true);
-  };
+
+    // Optional: refresh queue after generating
+    fetchQueue();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to generate token");
+  }
+}
+
+
+const fetchQueue = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/token/list/Admission");
+    const data = await res.json();
+    setQueueData(data);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to fetch queue");
+  }
+};
+
+  // Temporary static queue (later get from Firebase)
+
   return (
     <div className=' token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 '>
       <div className='flex justify-center items-center  '>
@@ -29,9 +58,10 @@ const Token1 = () => {
       </div>
       <div className='flex justify-between '>
         <button className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold' onClick={handleGenerate}>Generate Token</button>
-        <button className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold'>View Queue <ArrowRight /></button>
+
+        <button className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold'  onClick={() => setShowQueue(true)}>View Queue <ArrowRight /></button>
       </div>
-      {show && (
+      {show && token &&(
   <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
     <TokenCard 
       token={token} 
@@ -40,7 +70,12 @@ const Token1 = () => {
     />
   </div>
 )}
-     
+   <QueueModal
+  show={showQueue}
+  onClose={() => setShowQueue(false)}
+  serviceName="Admission"
+  queue={queueData}
+/>
     </div>
   )
 }

@@ -1,19 +1,44 @@
 import { UtensilsCrossed } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
 import { useContext, useState } from "react";
-import { QueueContext } from "./QueueContext";
 import TokenCard from "./TokenCard";
-
+import QueueModal from "./QueueModal";
 const Token4 = () => {
-   const { generateToken } = useContext(QueueContext);
+   const [showQueue, setShowQueue] = useState(false);
+  const [queueData, setQueueData] = useState([]);
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
 
-  const handleGenerate = () => {
-    const newToken = generateToken("Canteen"); // 👈 just change name
-    setToken(newToken);
+     const handleGenerate = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/token/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName: "John Doe", serviceName: "Canteen" }) // replace with dynamic userName if needed
+    });
+
+    const data = await res.json();
+    setToken(data.token); // store the generated token
     setShow(true);
-  };
+
+    // Optional: refresh queue after generating
+    fetchQueue();
+  } catch (err) {
+    console.error(err);
+    alert("Failed to generate token");
+  }
+}
+
+const fetchQueue = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/token/list/canteen");
+    const data = await res.json();
+    setQueueData(data);
+  } catch (err) {
+    console.error(err);
+    alert("Failed to fetch queue");
+  }
+};
   return (
     <div>
       <div className=' token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 '>
@@ -29,7 +54,7 @@ const Token4 = () => {
       </div>
       <div className='flex justify-between '>
         <button className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold' onClick={handleGenerate}>Generate Token</button>
-        <button className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold'>View Queue <ArrowRight /></button>
+        <button className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold' onClick={() => setShowQueue(true)}>View Queue <ArrowRight /></button>
       </div>
     </div>
      {show && (
@@ -41,6 +66,12 @@ const Token4 = () => {
     />
   </div>
 )}
+<QueueModal
+  show={showQueue}
+  onClose={() => setShowQueue(false)}
+  serviceName="Library"
+  queue={queueData}
+/>
     </div>
   )
 }

@@ -47,7 +47,7 @@ const LoginPopup = ({ onLogin }) => {
               type="email"
               placeholder="Name@gmail.com"
               required
-              className="w-full mt-1 p-2 border border-gray-400 rounded-lg outline-blue-500"
+              className="w-full mt-1 p-2 border border-gray-400 rounded-lg outline-[#341C4E]"
               value={user.email}
               onChange={(e) => setUser({ ...user, email: e.target.value })}
             />
@@ -69,7 +69,7 @@ const LoginPopup = ({ onLogin }) => {
 
           <button
             type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-semibold transition"
+            className="w-full bg-[#341C4E] hover:bg-[#341C4E] text-white py-2 rounded-lg font-semibold transition"
           >
             Login
           </button>

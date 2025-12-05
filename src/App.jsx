@@ -10,6 +10,9 @@ import Token from "./Components/TokenSection/Token";
 import Footer from "./Components/Footer/Footer";
 import { QueueProvider } from "./Components/TokenSection/QueueContext";
 import LoginPopup from "./Components/UserLogin/LoginPopup";
+import TokenCard from "./Components/TokenSection/TokenCard";
+import TokenForm from "./Components/TokenSection/TokenForm";
+import QueueList from "./Components/TokenSection/QueueList";
 
 
 
