@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { BookOpenText } from 'lucide-react';
-import { useContext, useState } from "react";
+import { useEffect, useState } from "react";
 import TokenCard from "./TokenCard";
 import QueueModal from "./QueueModal";
 const Token3 = () => {
@@ -9,25 +9,29 @@ const Token3 = () => {
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
 
+ useEffect(() => {
+  const saved = localStorage.getItem("myToken");
+  if (saved) setToken(JSON.parse(saved));
+}, []);
+
    const handleGenerate = async () => {
-  try {
-    const res = await fetch("http://localhost:5000/api/token/generate", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName: "John Doe", serviceName: "Library" }) // replace with dynamic userName if needed
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/token/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userName: "John Doe", serviceName: "Library" })
+      });
 
-    const data = await res.json();
-    setToken(data.token); // store the generated token
-    setShow(true);
-
-    // Optional: refresh queue after generating
-    fetchQueue();
-  } catch (err) {
-    console.error(err);
-    alert("Failed to generate token");
-  }
-}
+      const data = await res.json();
+      setToken(data.token);
+      localStorage.setItem("myToken", JSON.stringify(data.token)); // 🔐 Save token
+      setShow(true);
+      fetchQueue();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to generate token");
+    }
+  };
 
 const fetchQueue = async () => {
   try {
@@ -53,11 +57,34 @@ const fetchQueue = async () => {
         <p>Current queue:</p>
       </div>
       <div className='flex justify-between '>
-        <button className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold' onClick={handleGenerate}>Generate Token</button>
-        <button className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold' onClick={() => setShowQueue(true)}>View Queue <ArrowRight /></button>
+       {!token && (
+          <button 
+            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
+            onClick={handleGenerate}
+          >
+            Generate Token
+          </button>
+        )}
+       {token && (
+          <button 
+            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
+            onClick={() => setShow(true)}
+          >
+            See My Token
+          </button>
+        )}
+ <button 
+          className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold'
+          onClick={() => {
+            fetchQueue();
+            setShowQueue(true);
+          }}
+        >
+          View Queue <ArrowRight />
+        </button>
       </div>
     </div>
-     {show && (
+     {show && token &&(
   <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
     <TokenCard 
       token={token} 

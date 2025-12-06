@@ -3,6 +3,14 @@ import React from "react";
 const QueueModal = ({ show, onClose, serviceName, queue }) => {
   if (!show) return null;
 
+  const SERVICE_TIME = {
+  Admission: 25,
+  "railwayConsession": 10,
+  Library: 3,
+  "Canteen": 2,
+  "FeesPayment": 7,
+}; // minutes for each token
+const avgTime = SERVICE_TIME[serviceName] || 3;
   return (
     <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 flex justify-center items-center px-3">
       <div className="relative bg-white w-full max-w-lg rounded-xl shadow-xl animate-slideDown">
@@ -20,37 +28,56 @@ const QueueModal = ({ show, onClose, serviceName, queue }) => {
           <div>
             <h2 className="text-xl font-semibold">{serviceName} - Current Queue</h2>
             <p className="text-gray-500 text-sm">
-              {queue.length} in queue • Avg ~3 min/token
+              {queue.length} in queue • Avg ~{avgTime} min/token
             </p>
           </div>
         </div>
 
-        {/* Queue List */}
-        <div className="overflow-y-auto p-4 space-y-3">
-          {queue.map((item, idx) => (
-            <div
-              key={idx}
-              className={`border rounded-lg flex justify-between items-center p-3 
-              ${idx === 0 ? "bg-green-50 border-green-300" : ""}
-            `}
-            >
-              <div>
-                <p className="font-semibold">{item.token}</p>
-                <p className="text-sm text-gray-500">
-                  {idx === 0 ? "Now" : `~${idx * 3} min`}
-                </p>
-              </div>
+        <div className="max-h-[60vh] overflow-y-auto px-4 py-3 space-y-3">
+  {queue.map((item, idx) => {
+    const isServing = idx === 0 && item.status !== "Canceled";
+    const eta = idx * avgTime;
 
-              <span
-                className={`text-xs px-3 py-1 rounded-full 
-                ${idx === 0 ? "bg-green-600 text-white" : "bg-gray-200 text-gray-700"}
-              `}
-              >
-                {idx === 0 ? "Now Serving" : "Waiting"}
-              </span>
-            </div>
-          ))}
+    // Status Badge Colors
+    const badgeColor =
+      item.status === "Canceled"
+        ? "bg-red-600 text-white"
+        : isServing
+        ? "bg-green-600 text-white"
+        : "bg-gray-200 text-gray-700";
+
+    // Card background based on status
+    const cardStyle =
+      item.status === "Canceled"
+        ? "bg-red-50 border-red-300"
+        : isServing
+        ? "bg-green-50 border-green-400 shadow-sm"
+        : "bg-gray-50 border-gray-300";
+
+    return (
+      <div
+        key={item._id}
+        className={`border rounded-lg flex justify-between items-center p-3 transition-all ${cardStyle}`}
+      >
+        <div>
+          <p className="font-bold text-lg">{item.displayToken}</p>
+
+          <p className="text-sm text-gray-500">
+            {item.status === "Canceled"
+              ? "Canceled"
+              : isServing
+              ? "Now"
+              : `~${eta} min`}
+          </p>
         </div>
+
+        <span className={`text-xs px-3 py-1 rounded-full ${badgeColor}`}>
+          {item.status}
+        </span>
+      </div>
+    );
+  })}
+</div>
 
         {/* Footer */}
         <div className="text-center text-gray-500 text-sm p-2 border-t">

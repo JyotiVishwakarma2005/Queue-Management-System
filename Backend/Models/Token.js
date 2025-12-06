@@ -5,6 +5,11 @@ const tokenSchema = new mongoose.Schema({
   serviceName: String,
   tokenNumber: Number,          // store numeric only
   displayToken: String,         // formatted token
+   status: {
+    type: String,
+    enum: ["pending", "serving", "completed", "cancelled"],
+    default: "pending"
+  },
   time: { type: Date, default: Date.now }
 });
 

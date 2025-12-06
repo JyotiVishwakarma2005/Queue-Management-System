@@ -17,7 +17,22 @@ const TokenCard = ({ token, service, closeModal }) => {
     link.download = `Token-${token.tokenNumber}.png`; // 👈 Now using backend token number
     link.click();
   };
+ 
+ const cancelToken = async () => {
+  try {
+    await fetch(`http://localhost:5000/api/token/cancel/${token._id}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ serviceName: token.serviceName })
+    });
 
+    localStorage.removeItem("myToken");  // 🔥 Remove locally
+    closeModal();                        // ❌ Hide modal
+    window.location.reload();            // 🔄 Refresh UI
+  } catch (err) {
+    alert("Failed to cancel token");
+  }
+};
   return (
     <div
       className="bg-[#FEE6A4] w-[300px] sm:w-[350px] md:w-[400px] rounded-2xl p-5 shadow-2xl flex flex-col items-center relative"
@@ -45,7 +60,7 @@ const TokenCard = ({ token, service, closeModal }) => {
 
       <div className="flex justify-between gap-4 w-full mt-3">
         <button 
-          onClick={closeModal}
+          onClick={cancelToken}
           className="flex-1 p-2 bg-[#341C4E] text-white rounded-lg hover:bg-white hover:text-black hover:border hover:font-bold"
         >
           Cancel Token

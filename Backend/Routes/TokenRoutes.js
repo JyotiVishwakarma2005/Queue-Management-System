@@ -53,4 +53,52 @@ router.get("/list/:service", async (req, res) => {
   }
 });
 
+router.get("/queue/:service", async (req, res) => {
+  try {
+    const { service } = req.params;
+    const tokens = await Token.find({ service, status: { $in: ["pending", "serving"] } })
+      .sort({ createdAt: 1 });
+
+    res.json(tokens);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ message: "Error fetching queue" });
+  }
+});
+
+// router.put("/cancel/:serviceName/:id", async (req, res) => {
+//   const { serviceName, id } = req.params;
+
+//   try {
+//     const Token = getTokenModel(serviceName);
+//     const token = await Token.findByIdAndUpdate(
+//       id,
+//       { status: "cancelled" },
+//       { new: true }
+//     );
+
+//     return res.json({ success: true, message: "Token Cancelled", token });
+//   } catch (err) {
+//     return res.status(500).json({ success: false, message: err.message });
+//   }
+// });
+
+router.put("/cancel/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const service = req.body.serviceName;
+
+    const TokenModel = getTokenModel(service);
+    const updated = await TokenModel.findByIdAndUpdate(
+      id,
+      { status: "Canceled" },
+      { new: true }
+    );
+
+    res.json({ message: "Token canceled", token: updated });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 export default router;
