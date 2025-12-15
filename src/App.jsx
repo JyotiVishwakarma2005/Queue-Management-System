@@ -13,6 +13,7 @@ import LoginPopup from "./Components/UserLogin/LoginPopup";
 import TokenCard from "./Components/TokenSection/TokenCard";
 import TokenForm from "./Components/TokenSection/TokenForm";
 import QueueList from "./Components/TokenSection/QueueList";
+import OurServices from "./Components/HeroSection/OurServices";
 
 
 
@@ -36,6 +37,7 @@ const App = () => {
       </Routes>
     </BrowserRouter>
     <Hero/>
+    <OurServices/>
     <Token />
     <Footer/>
   </QueueProvider>

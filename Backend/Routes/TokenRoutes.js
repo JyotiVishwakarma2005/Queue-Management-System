@@ -66,39 +66,28 @@ router.get("/queue/:service", async (req, res) => {
   }
 });
 
-// router.put("/cancel/:serviceName/:id", async (req, res) => {
-//   const { serviceName, id } = req.params;
 
-//   try {
-//     const Token = getTokenModel(serviceName);
-//     const token = await Token.findByIdAndUpdate(
-//       id,
-//       { status: "cancelled" },
-//       { new: true }
-//     );
-
-//     return res.json({ success: true, message: "Token Cancelled", token });
-//   } catch (err) {
-//     return res.status(500).json({ success: false, message: err.message });
-//   }
-// });
-
-router.put("/cancel/:id", async (req, res) => {
+router.put('/cancel/:service/:tokenNumber', async (req, res) => {
   try {
-    const { id } = req.params;
-    const service = req.body.serviceName;
+    const { service, tokenNumber } = req.params;
 
     const TokenModel = getTokenModel(service);
-    const updated = await TokenModel.findByIdAndUpdate(
-      id,
-      { status: "Canceled" },
-      { new: true }
-    );
+    if (!TokenModel) return res.status(400).json({ message: 'Invalid service' });
 
-    res.json({ message: "Token canceled", token: updated });
+    const token = await TokenModel.findOne({ tokenNumber });
+    if (!token) return res.status(404).json({ message: 'Token not found' });
+
+    token.status = 'cancelled'; // ✅ matches schema enum
+    await token.save();
+
+    res.json(token);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error(err); // check backend console for exact Mongoose error
+    res.status(500).json({ message: 'Failed to cancel token', error: err.message });
   }
 });
+
+
+
 
 export default router;

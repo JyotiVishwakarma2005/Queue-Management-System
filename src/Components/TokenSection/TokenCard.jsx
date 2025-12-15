@@ -3,9 +3,8 @@ import { CircleCheckBig } from 'lucide-react';
 import html2canvas from "html2canvas";
 import { useRef } from "react";
 
-const TokenCard = ({ token, service, closeModal }) => {
+const TokenCard = ({ token, service, closeModal,cancelToken}) => {
   const downloadRef = useRef(null);
-
   const downloadAsImage = async () => {
     if (!downloadRef.current) return;
 
@@ -18,21 +17,6 @@ const TokenCard = ({ token, service, closeModal }) => {
     link.click();
   };
  
- const cancelToken = async () => {
-  try {
-    await fetch(`http://localhost:5000/api/token/cancel/${token._id}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ serviceName: token.serviceName })
-    });
-
-    localStorage.removeItem("myToken");  // 🔥 Remove locally
-    closeModal();                        // ❌ Hide modal
-    window.location.reload();            // 🔄 Refresh UI
-  } catch (err) {
-    alert("Failed to cancel token");
-  }
-};
   return (
     <div
       className="bg-[#FEE6A4] w-[300px] sm:w-[350px] md:w-[400px] rounded-2xl p-5 shadow-2xl flex flex-col items-center relative"
@@ -51,7 +35,6 @@ const TokenCard = ({ token, service, closeModal }) => {
 
       <p className="mt-4 text-lg font-semibold">{service}</p>
 
-      {/* 🔥 Token number from backend */}
       <h1 className="text-3xl font-extrabold">{token.displayToken}</h1>
 
       <p className="text-center my-4 text-sm">
@@ -77,3 +60,5 @@ const TokenCard = ({ token, service, closeModal }) => {
 };
 
 export default TokenCard;
+
+

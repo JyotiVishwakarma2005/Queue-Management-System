@@ -1,7 +1,8 @@
 import express from "express";
 import mongoose from "mongoose";
 import cors from "cors";
-import tokenRoutes from "./routes/tokenRoutes.js";
+import tokenRoutes from "./Routes/tokenRoutes.js";
+import UserLoginRoutes from "./Routes/UserLoginRoutes.js"
 
 const app = express();
 app.use(cors());
@@ -14,6 +15,7 @@ mongoose.connect("mongodb://localhost:27017/collegeQueueDb")
 
 // Routes
 app.use("/api/token", tokenRoutes);
+app.use("/api/UserLogin", UserLoginRoutes);  
 app.get('/tokens', (req, res) => {
   res.json({ message: "Tokens endpoint working" });
 });
@@ -22,3 +24,4 @@ app.get('/', (req, res) => {
 });
 
 app.listen(5000, () => console.log("Server running on port 5000"));
+

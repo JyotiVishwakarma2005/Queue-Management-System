@@ -1,80 +1,100 @@
 import { useEffect, useState } from "react";
 
-const LoginPopup = ({ onLogin }) => {
+const LoginPopup = ({ onAuthSuccess }) => {
   const [show, setShow] = useState(false);
-  const [user, setUser] = useState({ email: "", password: "" });
+  const [user, setUser] = useState({ username: "", email: "", password: "" });
+  const [loading, setLoading] = useState(false);
 
-  // Auto popup after 2 seconds
   useEffect(() => {
-    const timer = setTimeout(() => setShow(true), 2000);
-    return () => clearTimeout(timer);
+    if (!localStorage.getItem("queueUserToken")) {
+      const timer = setTimeout(() => setShow(true), 1000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    onLogin(user);
-    setShow(false);
+    setLoading(true);
+    try {
+      const res = await fetch("http://localhost:5000/api/UserLogin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.message || "Authentication failed");
+        setLoading(false);
+        return;
+      }
+
+      localStorage.setItem("queueUserToken", data.token);
+      localStorage.setItem("queueUserName", data.user.username);
+      localStorage.setItem("queueUserId", data.user._id);
+
+      onAuthSuccess?.(data.user);
+      setShow(false);
+    } catch (err) {
+      alert("Server not responding");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
+      {/* Backdrop */}
       {show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40"></div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-500 opacity-100" />
       )}
 
-      <div
-        className={`fixed left-1/2 -translate-x-1/2 w-[90%] max-w-sm bg-white shadow-lg rounded-xl p-6 z-50 duration-500 ${
-          show ? "top-14" : "-top-[400px]"
-        }`}
-      >
-        <button
-          onClick={() => setShow(false)}
-          className="absolute right-4 top-3 text-gray-700 text-xl font-bold hover:text-red-500"
-        >
-          ×
-        </button>
+      {/* Popup */}
+      {show && (
+        <div className="fixed left-1/2 top-20 -translate-x-1/2 w-[90%] max-w-sm bg-white p-6 rounded-xl z-50 animate-slideDown">
+          <h2 className="text-xl font-semibold text-center mb-4">Sign up</h2>
 
-        <h2 className="text-center text-xl font-semibold text-gray-800 mb-4">
-          User Login
-        </h2>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <input
+              placeholder="Name"
+              required
+              value={user.username}
+              onChange={(e) => setUser({ ...user, username: e.target.value })}
+              className="w-full p-2 border rounded"
+            />
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-gray-700 text-sm font-medium">
-              Enter your email:
-            </label>
             <input
               type="email"
-              placeholder="Name@gmail.com"
+              placeholder="Email"
               required
-              className="w-full mt-1 p-2 border border-gray-400 rounded-lg outline-[#341C4E]"
               value={user.email}
               onChange={(e) => setUser({ ...user, email: e.target.value })}
+              className="w-full p-2 border rounded"
             />
-          </div>
 
-          <div>
-            <label className="block text-gray-700 text-sm font-medium">
-              Password
-            </label>
             <input
               type="password"
-              placeholder="********"
+              placeholder="Password"
               required
-              className="w-full mt-1 p-2 border border-gray-400 rounded-lg outline-blue-500"
               value={user.password}
               onChange={(e) => setUser({ ...user, password: e.target.value })}
+              className="w-full p-2 border rounded"
             />
-          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-[#341C4E] hover:bg-[#341C4E] text-white py-2 rounded-lg font-semibold transition"
-          >
-            Login
-          </button>
-        </form>
-      </div>
+            <button
+              disabled={loading}
+              className="w-full bg-[#341C4E] text-white py-2 rounded"
+            >
+              {loading ? "Please wait..." : "Continue"}
+            </button>
+          </form>
+
+          <div className="mt-4 space-y-2">
+            <button className="w-full border py-2 rounded">Continue with Google</button>
+            <button className="w-full border py-2 rounded">Continue with GitHub</button>
+          </div>
+        </div>
+      )}
     </>
   );
 };
