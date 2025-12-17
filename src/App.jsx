@@ -5,9 +5,9 @@ import AboutUs from "./Components/Navbar/Aboutus";
 import Contact from "./Components/Navbar/Contact";
 import Main from "./Components/Navbar/Main";
 import Profile from "./Components/Navbar/Profile";
-import Hero from "./Components/HeroSection/Hero";
-import Token from "./Components/TokenSection/Token";
-import Footer from "./Components/Footer/Footer";
+// import Hero from "./Components/HeroSection/Hero";
+// import Token from "./Components/TokenSection/Token";
+// import Footer from "./Components/Footer/Footer";
 import { QueueProvider } from "./Components/TokenSection/QueueContext";
 import LoginPopup from "./Components/UserLogin/LoginPopup";
 import TokenCard from "./Components/TokenSection/TokenCard";
@@ -25,7 +25,7 @@ const App = () => {
     
   return (
     <>
-    <QueueProvider>
+    {/* <QueueProvider> */}
     <BrowserRouter>
       <Navbar />
 
@@ -36,11 +36,11 @@ const App = () => {
         <Route path="/profile" element={<Profile />} />
       </Routes>
     </BrowserRouter>
-    <Hero/>
+    {/* <Hero/>
     <OurServices/>
     <Token />
     <Footer/>
-  </QueueProvider>
+  </QueueProvider> */}
   <LoginPopup onLogin={handleLogin} />
     </>
   );

@@ -107,76 +107,78 @@ const handleCancelToken = async () => {
   };
 
   return (
-    <div className='token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500'>
-      
-      {/* HEADER */}
-      <div className='flex justify-center items-center'>
-        <div className='border border-double p-2 rounded-full'>
-          <UserRoundPlus />
-        </div>
-        <h2 className='font-bold text-2xl'>Token for Admission</h2>
-      </div>
+    <div className="token w-full max-w-md bg-white flex flex-col gap-5 p-5 shadow-md shadow-gray-500 rounded-xl mx-auto">
 
-      {/* INFO */}
-      <div className='flex flex-col bg-gray-200 p-3'>
-        <p>Expected waiting time: {expectedTime}</p>
-        <p>Current queue:{currentQueue}</p>
-      </div>
-
-      {/* BUTTONS */}
-      <div className='flex justify-between'>
-
-        {/* 🔥 Show Generate Token ONLY if no token exists */}
-        {!token && (
-          <button 
-            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
-            onClick={handleGenerate}
-          >
-            Generate Token
-          </button>
-        )}
-
-        {/* 🎫 Show See My Token if token already exists */}
-        {token && (
-          <button 
-            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
-            onClick={() => setShow(true)}
-          >
-            See My Token
-          </button>
-        )}
-
-        <button 
-          className='p-3 bg-black text-white rounded-2xl flex items-center hover:bg-white hover:text-black hover:border hover:font-bold'
-          onClick={() => {
-            fetchQueue();
-            setShowQueue(true);
-          }}
-        >
-          View Queue <ArrowRight />
-        </button>
-      </div>
-
-      {/* TOKEN MODAL */}
-     {show && token && (
-  <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
-    <TokenCard
-      token={token}
-      service="Admission"
-      closeModal={() => setShow(false)}
-      cancelToken={handleCancelToken} // ✅ pass the function here
-    />
+  {/* HEADER */}
+  <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-3">
+    <div className="border border-double p-3 rounded-full">
+      <UserRoundPlus />
+    </div>
+    <h2 className="font-bold text-xl sm:text-2xl">Token for Admission</h2>
   </div>
-)}
 
-      {/* QUEUE MODAL */}
-      <QueueModal
-        show={showQueue}
-        onClose={() => setShowQueue(false)}
-        serviceName="Admission"
-        queue={queueData}
+  {/* INFO */}
+  <div className="flex flex-col bg-gray-200 p-4 rounded-lg text-sm sm:text-base">
+    <p>Expected waiting time: {expectedTime}</p>
+    <p>Current queue: {currentQueue}</p>
+  </div>
+
+  {/* BUTTONS */}
+  <div className="flex flex-col sm:flex-row gap-3 justify-between">
+
+    {/* Generate Token button */}
+    {!token && (
+      <button 
+        className="p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold w-full sm:w-auto"
+        onClick={handleGenerate}
+      >
+        Generate Token
+      </button>
+    )}
+
+    {/* See My Token button */}
+    {token && (
+      <button 
+        className="p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold w-full sm:w-auto"
+        onClick={() => setShow(true)}
+      >
+        See My Token
+      </button>
+    )}
+
+    {/* View Queue */}
+    <button 
+      className="p-3 bg-black text-white rounded-2xl flex justify-center items-center gap-2 hover:bg-white hover:text-black hover:border hover:font-bold w-full sm:w-auto"
+      onClick={() => {
+        fetchQueue();
+        setShowQueue(true);
+      }}
+    >
+      View Queue <ArrowRight />
+    </button>
+  </div>
+
+  {/* TOKEN MODAL (unchanged) */}
+  {show && token && (
+    <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+      <TokenCard
+        token={token}
+        service="Admission"
+        closeModal={() => setShow(false)}
+        cancelToken={handleCancelToken}
       />
     </div>
+  )}
+
+  {/* QUEUE MODAL (unchanged) */}
+  <QueueModal
+    show={showQueue}
+    onClose={() => setShowQueue(false)}
+    serviceName="Admission"
+    queue={queueData}
+  />
+</div>
+
   );
 };
 
