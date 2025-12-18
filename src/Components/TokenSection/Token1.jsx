@@ -76,13 +76,24 @@ const handleCancelToken = async () => {
     if (saved) setToken(JSON.parse(saved));
   }, []);
 
+  const [user, setUser] = useState(null);
+
+useEffect(() => {
+  const savedUser = localStorage.getItem("user");
+  if (savedUser) {
+    setUser(JSON.parse(savedUser));
+  }
+}, []);
+
   const handleGenerate = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/token/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: "John Doe", serviceName: "Admission" })
-      });
+      const userName = localStorage.getItem("queueUserName"); // ✅ just get the string
+  if (!userName) return alert("No user logged in");
+      try {
+    const res = await fetch("http://localhost:5000/api/token/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userName, serviceName: "Admission" }) // dynamic username
+    });
 
       const data = await res.json();
       setToken(data.token);
@@ -107,7 +118,7 @@ const handleCancelToken = async () => {
   };
 
   return (
-    <div className="token w-full max-w-md bg-white flex flex-col gap-5 p-5 shadow-md shadow-gray-500 rounded-xl mx-auto">
+    <div className=' token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 '>
 
   {/* HEADER */}
   <div className="flex flex-col sm:flex-row items-center justify-center text-center gap-3">

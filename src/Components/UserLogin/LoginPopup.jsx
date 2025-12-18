@@ -1,10 +1,19 @@
 import { useEffect, useState } from "react";
 
-const LoginPopup = ({ onAuthSuccess }) => {
+const LoginPopup = ({ forceOpen = false, onAuthSuccess }) => {
   const [show, setShow] = useState(false);
-  const [user, setUser] = useState({ username: "", email: "", password: "" });
+
+  // 🔹 User input state (you removed this by mistake)
+  const [user, setUser] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
+
+  // 🔹 Loading state (you removed this too)
   const [loading, setLoading] = useState(false);
 
+  // 🔥 Open automatically on first load IF user not logged in
   useEffect(() => {
     if (!localStorage.getItem("queueUserToken")) {
       const timer = setTimeout(() => setShow(true), 1000);
@@ -12,9 +21,18 @@ const LoginPopup = ({ onAuthSuccess }) => {
     }
   }, []);
 
+  // 🔥 Open when logout triggers popup
+  useEffect(() => {
+    if (forceOpen) {
+      setShow(true);
+    }
+  }, [forceOpen]);
+
+  // Handle signup/login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
     try {
       const res = await fetch("http://localhost:5000/api/UserLogin/login", {
         method: "POST",
@@ -23,12 +41,14 @@ const LoginPopup = ({ onAuthSuccess }) => {
       });
 
       const data = await res.json();
+
       if (!res.ok) {
         alert(data.message || "Authentication failed");
         setLoading(false);
         return;
       }
 
+      // Save Session
       localStorage.setItem("queueUserToken", data.token);
       localStorage.setItem("queueUserName", data.user.username);
       localStorage.setItem("queueUserId", data.user._id);
@@ -46,7 +66,7 @@ const LoginPopup = ({ onAuthSuccess }) => {
     <>
       {/* Backdrop */}
       {show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-500 opacity-100" />
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40" />
       )}
 
       {/* Popup */}
@@ -77,7 +97,9 @@ const LoginPopup = ({ onAuthSuccess }) => {
               placeholder="Password"
               required
               value={user.password}
-              onChange={(e) => setUser({ ...user, password: e.target.value })}
+              onChange={(e) =>
+                setUser({ ...user, password: e.target.value })
+              }
               className="w-full p-2 border rounded"
             />
 
@@ -90,8 +112,12 @@ const LoginPopup = ({ onAuthSuccess }) => {
           </form>
 
           <div className="mt-4 space-y-2">
-            <button className="w-full border py-2 rounded">Continue with Google</button>
-            <button className="w-full border py-2 rounded">Continue with GitHub</button>
+            <button className="w-full border py-2 rounded">
+              Continue with Google
+            </button>
+            <button className="w-full border py-2 rounded">
+              Continue with GitHub
+            </button>
           </div>
         </div>
       )}

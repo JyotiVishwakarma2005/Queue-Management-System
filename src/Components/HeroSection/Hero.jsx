@@ -74,29 +74,29 @@ const Hero = () => {
           {/* Stats Cards */}
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 justify-center">
             {/* Card 1 */}
-            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center gap-4 p-5 shadow-md">
+            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center justify-center gap-4 p-5 shadow-md">
               <UsersRound size={50} className="text-[#341C4E]" />
               <div>
-                <h1 className="text-xl font-bold">3,263</h1>
-                <p className="text-sm">Students Served Today</p>
+                <h1 className="lg:text-2xl font-bold sm:text-sm">3,263</h1>
+                <p className="lg:text-lg sm:text-sm">Students Served Today</p>
               </div>
             </div>
 
             {/* Card 2 */}
-            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center gap-4 p-5 shadow-md">
+            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center justify-center gap-4 p-5 shadow-md">
               <CircleCheckBig size={50} className="text-[#341C4E]" />
               <div>
-                <h1 className="text-xl font-bold">2,337</h1>
-                <p className="text-sm">Tokens Completed</p>
+                <h1 className="lg:text-2xl font-bold sm:text-sm">2,337</h1>
+                <p className="lg:text-lg sm:text-sm">Tokens Completed</p>
               </div>
             </div>
 
             {/* Card 3 */}
-            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center gap-4 p-5 shadow-md">
+            <div className="bg-white h-36 sm:h-40 rounded-3xl flex items-center justify-center gap-4 p-5 shadow-md">
               <Clock size={50} className="text-[#341C4E]" />
               <div>
-                <h1 className="text-xl font-bold">4 min</h1>
-                <p className="text-sm">Average Wait Time</p>
+                <h1 className="lg:text-2xl font-bold sm:text-sm">4 min</h1>
+                <p className="lg:text-lg sm:text-sm">Average Wait Time</p>
               </div>
             </div>
           </div>

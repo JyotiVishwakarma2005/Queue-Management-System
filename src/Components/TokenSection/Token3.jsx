@@ -74,11 +74,13 @@ const expectedTime = currentQueue * avgTime;
 }, []);
 
    const handleGenerate = async () => {
+     const userName = localStorage.getItem("queueUserName"); // ✅ just get the string
+  if (!userName) return alert("No user logged in");
     try {
       const res = await fetch("http://localhost:5000/api/token/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName: "John Doe", serviceName: "Library" })
+        body: JSON.stringify({ userName, serviceName: "Library" })
       });
 
       const data = await res.json();
