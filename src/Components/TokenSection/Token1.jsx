@@ -44,7 +44,7 @@ const expectedTime = currentQueue * avgTime;
 const handleCancelToken = async () => {
   try {
     await fetch(
-      `http://localhost:5000/api/token/cancel/${token.serviceName}/${token.tokenNumber}`,
+      `http://localhost:5000/api/tokens/cancel/${token.serviceName}/${token.tokenNumber}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -59,7 +59,7 @@ const handleCancelToken = async () => {
     // Optionally update queueData locally
     setQueueData(prev =>
       prev.map(t =>
-        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Canceled' } : t
+        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Cancelled' } : t
       )
     );
 
@@ -86,29 +86,35 @@ useEffect(() => {
 }, []);
 
   const handleGenerate = async () => {
-      const userName = localStorage.getItem("queueUserName"); // ✅ just get the string
+  const userName = localStorage.getItem("queueUserName");
   if (!userName) return alert("No user logged in");
-      try {
-    const res = await fetch("http://localhost:5000/api/token/generate", {
+
+  try {
+    const res = await fetch("http://localhost:5000/api/tokens/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, serviceName: "Admission" }) // dynamic username
+      body: JSON.stringify({ userName, serviceName: "Admission" })
     });
 
-      const data = await res.json();
-      setToken(data.token);
-      localStorage.setItem(`${serviceName}Token`, JSON.stringify(data.token)); // 🔐 Save token
-      setShow(true);
-      fetchQueue();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate token");
-    }
-  };
+    const data = await res.json();
+
+    setToken(data.token);
+    localStorage.setItem(`${serviceName}Token`, JSON.stringify(data.token));
+    setShow(true);
+
+    // ❌ REMOVE THIS
+    // fetchQueue();
+
+  } catch (err) {
+    console.error(err);
+    alert("Failed to generate token");
+  }
+};
+
 
   const fetchQueue = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/token/list/Admission");
+      const res = await fetch("http://localhost:5000/api/tokens/list/Admission");
       const data = await res.json();
       setQueueData(data);
     } catch (err) {

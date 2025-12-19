@@ -47,7 +47,7 @@ const expectedTime = currentQueue * avgTime;
 const handleCancelToken = async () => {
   try {
     await fetch(
-      `http://localhost:5000/api/token/cancel/${token.serviceName}/${token.tokenNumber}`,
+      `http://localhost:5000/api/tokens/cancel/${token.serviceName}/${token.tokenNumber}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@ const handleCancelToken = async () => {
   if (!userName) return alert("No user logged in");
 
     try {
-      const res = await fetch("http://localhost:5000/api/token/generate", {
+      const res = await fetch("http://localhost:5000/api/tokens/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ userName, serviceName: "FeesPayment" })
@@ -96,7 +96,7 @@ const handleCancelToken = async () => {
 
   const fetchQueue = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/token/list/feespayment");
+      const res = await fetch("http://localhost:5000/api/tokens/list/feespayment");
       const data = await res.json();
       setQueueData(data);
     } catch (err) {
