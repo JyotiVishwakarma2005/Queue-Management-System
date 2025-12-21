@@ -1,34 +1,71 @@
-import React, { useState ,useEffect} from "react";
+
+import  { useState, useEffect } from "react";
 
 const statusStyles = {
   pending: "bg-yellow-200 text-yellow-800",
-  processing: "bg-blue-200 text-blue-800",
+  serving: "bg-blue-200 text-blue-800",
   completed: "bg-green-200 text-green-800",
   cancelled: "bg-red-200 text-red-800",
 };
-const RailwayConsessionTokens = () => {
+const RailwayTokens = () => {
   const [tokens, setTokens] = useState([]);
 
-  // Fetch Admission Tokens (Correct API)
+  // Fetch tokens
   const fetchTokens = async () => {
     try {
-      const res = await fetch(
-        "http://localhost:5000/api/tokens/list/RailwayConsession"
-      );
+      const res = await fetch("http://localhost:5000/api/tokens/list/RailwayConsession");
       const data = await res.json();
       setTokens(data);
     } catch (err) {
       console.log("Error fetching tokens", err);
     }
   };
-useEffect(() => {
-  fetchTokens();
-}, []);
+
+  useEffect(() => {
+    fetchTokens();
+  }, []);
+
+  // Update status
+const updateStatus = async (tokenNumber, newStatus) => {
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/tokens/RailwayConsession/status/${tokenNumber}`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      }
+    );
+
+       const updatedToken = await res.json();
+
+    setTokens((prev) =>
+      prev.map((t) =>
+        t.tokenNumber === updatedToken.tokenNumber ? updatedToken : t
+      )
+    );
+
+  } catch (err) {
+    console.log("Error updating status:", err);
+  }
+};
+
+const handleProcess = (tokenNumber) =>
+  updateStatus(tokenNumber, "serving");
+
+const handleComplete = (tokenNumber) =>
+  updateStatus(tokenNumber, "completed");
+
+const handleReject = (tokenNumber) =>
+  updateStatus(tokenNumber, "cancelled");
+
+
+
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Railway Consession Tokens</h1>
+        <h1 className="text-2xl font-bold">RailwayConsession Tokens</h1>
 
         <button
           onClick={fetchTokens}
@@ -42,13 +79,13 @@ useEffect(() => {
         Total Tokens: <b>{tokens.length}</b>
       </p>
 
-      {/* Token List */}
       <div className="space-y-4">
         {tokens.map((token) => (
           <div
             key={token._id}
             className="p-4 bg-white rounded-lg shadow-md flex justify-between items-center"
           >
+            {/* LEFT SECTION */}
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span
@@ -61,7 +98,7 @@ useEffect(() => {
 
                 <span
                   className={`text-sm ${
-                    statusStyles[token.status?.toLowerCase()]|| ""
+                    statusStyles[token.status?.toLowerCase()] || ""
                   } px-2 py-1 rounded-full`}
                 >
                   {token.status}
@@ -77,27 +114,36 @@ useEffect(() => {
               </p>
             </div>
 
+            {/* BUTTONS */}
             <div className="flex gap-2">
-              <button className="bg-blue-500 text-white px-3 py-1 rounded">
+              <button
+                onClick={() => handleView(token)}
+                className="bg-blue-500 text-white px-3 py-1 rounded"
+              >
                 View
               </button>
+<button
+  className="bg-blue-500 px-3 py-1 rounded text-white"
+  onClick={() => handleProcess(token.tokenNumber)}
+>
+  Process
+</button>
 
-              {token.status === "pending" && (
-                <>
-                  <button className="bg-green-500 text-white px-3 py-1 rounded">
-                    Process
-                  </button>
-                  <button className="bg-red-500 text-white px-3 py-1 rounded">
-                    Reject
-                  </button>
-                </>
-              )}
+<button
+  className="bg-green-600 px-3 py-1 rounded text-white"
+  onClick={() => handleComplete(token.tokenNumber)}
+>
+  Complete
+</button>
 
-              {token.status === "processing" && (
-                <button className="bg-green-500 text-white px-3 py-1 rounded">
-                  Complete
-                </button>
-              )}
+<button
+  className="bg-red-500 px-3 py-1 rounded text-white"
+  onClick={() => handleReject(token.tokenNumber)}
+>
+  Reject
+</button>
+
+
             </div>
           </div>
         ))}
@@ -106,4 +152,5 @@ useEffect(() => {
   );
 };
 
-export default RailwayConsessionTokens;
+export default RailwayTokens;
+
