@@ -6,13 +6,36 @@ import { useEffect, useState } from "react";
 import TokenCard from "./TokenCard";
 import QueueModal from "./QueueModal";
 
-const serviceName = "Admission";
 
-const Token1 = ({ queueData:initialQueueData=[]}) => {
+
+const Token1 = () => {
   const [showQueue, setShowQueue] = useState(false);
   const [queueData, setQueueData] = useState([]);
   const [token, setToken] = useState(null);
   const [show, setShow] = useState(false);
+const [isOpen, setIsOpen] = useState(false);
+
+useEffect(() => {
+  const fetchAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Admission/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.error("Failed to fetch access status", err);
+    }
+  };
+
+  fetchAccess(); // initial call
+
+  const interval = setInterval(fetchAccess, 3000); // every 3 sec
+  return () => clearInterval(interval);
+}, []);
+
+
+
 
   useEffect(() => {
   const interval = setInterval(() => {
@@ -21,8 +44,7 @@ const Token1 = ({ queueData:initialQueueData=[]}) => {
 
   return () => clearInterval(interval);
 }, []);
-
-const SERVICE_NAME = "Admission";
+const serviceName = "Admission"
   const SERVICE_TIME = {
     Admission: 25,
     railwayConsession: 10,
@@ -31,10 +53,12 @@ const SERVICE_NAME = "Admission";
     FeesPayment: 7,
   };
 
-  const avgTime = SERVICE_TIME[SERVICE_NAME] || 3;
+  const avgTime = SERVICE_TIME[serviceName] || 3;
 
 const serviceQueue = queueData.filter(
-  (item) => item.serviceName === SERVICE_NAME && item.status.toLowerCase() === "pending"
+  (item) =>
+    item.serviceName === serviceName &&
+    item.status?.toLowerCase() === "pending"
 );
 
 const currentQueue = serviceQueue.length;
@@ -42,12 +66,14 @@ const expectedTime = currentQueue * avgTime;
 
 
 const handleCancelToken = async () => {
+  if (!token) return;
+
   try {
     await fetch(
-      `http://localhost:5000/api/tokens/cancel/${token.serviceName}/${token.tokenNumber}`,
+      `http://localhost:5000/api/tokens/cancel/Admission/${token.tokenNumber}`,
       {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
       }
     );
 
@@ -72,9 +98,18 @@ const handleCancelToken = async () => {
 
   // 🔹 Load token if user refreshes the page
   useEffect(() => {
-    const saved = localStorage.getItem("AdmissionToken");
-    if (saved) setToken(JSON.parse(saved));
-  }, []);
+  const saved = localStorage.getItem("AdmissionToken");
+
+  if (!saved || saved === "undefined") return;
+
+  try {
+    const parsedToken = JSON.parse(saved);
+    setToken(parsedToken);
+  } catch (err) {
+    console.error("Invalid token in localStorage", err);
+    localStorage.removeItem("AdmissionToken");
+  }
+}, []);
 
   const [user, setUser] = useState(null);
 
@@ -85,7 +120,8 @@ useEffect(() => {
   }
 }, []);
 
-  const handleGenerate = async () => {
+
+const handleGenerate = async () => {
   const userName = localStorage.getItem("queueUserName");
   if (!userName) return alert("No user logged in");
 
@@ -93,35 +129,52 @@ useEffect(() => {
     const res = await fetch("http://localhost:5000/api/tokens/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userName, serviceName: "Admission" })
+      body: JSON.stringify({
+        userName,
+        serviceName: "Admission",
+      }),
     });
+
+    // ✅ VERY IMPORTANT
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Backend error:", text);
+      alert("Service is closed or server error");
+      return;
+    }
 
     const data = await res.json();
 
     setToken(data.token);
-    localStorage.setItem(`${serviceName}Token`, JSON.stringify(data.token));
+    localStorage.setItem(serviceName, JSON.stringify(data.token));
     setShow(true);
 
-    // ❌ REMOVE THIS
-    // fetchQueue();
-
   } catch (err) {
-    console.error(err);
+    console.error("Generate token failed:", err);
     alert("Failed to generate token");
   }
 };
 
 
-  const fetchQueue = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/tokens/list/Admission");
-      const data = await res.json();
-      setQueueData(data);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch queue");
+const fetchQueue = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/tokens/list/Admission");
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Queue API did not return array:", data);
+      setQueueData([]);
+      return;
     }
-  };
+
+    setQueueData(data);
+  } catch (err) {
+    console.error(err);
+    setQueueData([]);
+  }
+};
+
+
 
   return (
     <div className=' token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 '>
@@ -145,10 +198,15 @@ useEffect(() => {
 
     {/* Generate Token button */}
     {!token && (
-      <button 
-        className="p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold w-full sm:w-auto"
-        onClick={handleGenerate}
-      >
+      <button
+  disabled={!isOpen}
+  onClick={handleGenerate}
+  className={`p-3 rounded-2xl ${
+    isOpen
+      ? "bg-black text-white"
+      : "bg-gray-400 cursor-not-allowed"
+  }`}
+>
         Generate Token
       </button>
     )}

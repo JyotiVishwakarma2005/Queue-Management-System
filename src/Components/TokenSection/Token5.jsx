@@ -11,11 +11,27 @@ const Token5 = () => {
   const [queueData, setQueueData] = useState([]);
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
+const [isOpen, setIsOpen] = useState(false);
 
-   useEffect(() => {
-  const saved = localStorage.getItem("FeesPaymentToken");
-  if (saved) setToken(JSON.parse(saved));
+useEffect(() => {
+  const fetchAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/FeesPayment/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.error("Failed to fetch access status", err);
+    }
+  };
+
+  fetchAccess(); // initial call
+
+  const interval = setInterval(fetchAccess, 3000); // every 3 sec
+  return () => clearInterval(interval);
 }, []);
+
  
 useEffect(() => {
   const interval = setInterval(() => {
@@ -47,7 +63,7 @@ const expectedTime = currentQueue * avgTime;
 const handleCancelToken = async () => {
   try {
     await fetch(
-      `http://localhost:5000/api/tokens/cancel/${token.serviceName}/${token.tokenNumber}`,
+      `http://localhost:5000/api/tokens/cancel/FeesPayment/${token.tokenNumber}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -62,7 +78,7 @@ const handleCancelToken = async () => {
     // Optionally update queueData locally
     setQueueData(prev =>
       prev.map(t =>
-        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Canceled' } : t
+        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Cancelled' } : t
       )
     );
 
@@ -72,38 +88,82 @@ const handleCancelToken = async () => {
   }
 };
 
- const handleGenerate = async () => {
-   const userName = localStorage.getItem("queueUserName"); // ✅ just get the string
+
+useEffect(() => {
+  const saved = localStorage.getItem("FeesPaymentToken");
+
+  if (!saved || saved === "undefined") return;
+
+  try {
+    const parsedToken = JSON.parse(saved);
+    setToken(parsedToken);
+  } catch (err) {
+    console.error("Invalid token in localStorage", err);
+    localStorage.removeItem("FeesPaymentToken");
+  }
+}, []);
+
+  const [user, setUser] = useState(null);
+
+useEffect(() => {
+  const savedUser = localStorage.getItem("user");
+  if (savedUser) {
+    setUser(JSON.parse(savedUser));
+  }
+}, []);
+
+const handleGenerate = async () => {
+  const userName = localStorage.getItem("queueUserName");
   if (!userName) return alert("No user logged in");
 
-    try {
-      const res = await fetch("http://localhost:5000/api/tokens/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName, serviceName: "FeesPayment" })
-      });
+  try {
+    const res = await fetch("http://localhost:5000/api/tokens/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName,
+        serviceName: "FeesPayment",
+      }),
+    });
 
-      const data = await res.json();
-      setToken(data.token);
-       localStorage.setItem(`${serviceName}Token`, JSON.stringify(data.token));// 🔐 Save token
-      setShow(true);
-      fetchQueue();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate token");
+    // ✅ VERY IMPORTANT
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Backend error:", text);
+      alert("Service is closed or server error");
+      return;
     }
-  };
 
-  const fetchQueue = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/tokens/list/feespayment");
-      const data = await res.json();
-      setQueueData(data);
-    } catch (err) {
-      console.error(err);
-      alert("Failed to fetch queue");
+    const data = await res.json();
+
+    setToken(data.token);
+    localStorage.setItem(serviceName, JSON.stringify(data.token));
+    setShow(true);
+
+  } catch (err) {
+    console.error("Generate token failed:", err);
+    alert("Failed to generate token");
+  }
+};
+
+const fetchQueue = async () => {
+  try {
+    const res = await fetch("http://localhost:5000/api/tokens/list/FeesPayment");
+    const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Queue API did not return array:", data);
+      setQueueData([]);
+      return;
     }
-  };
+
+    setQueueData(data);
+  } catch (err) {
+    console.error(err);
+    setQueueData([]);
+  }
+};
+
   return (
     <div>
       <div className=" token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 ">
@@ -119,12 +179,17 @@ const handleCancelToken = async () => {
         </div>
         <div className="flex justify-between ">
             {!token && (
-          <button 
-            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
-            onClick={handleGenerate}
-          >
-            Generate Token
-          </button>
+          <button
+  disabled={!isOpen}
+  onClick={handleGenerate}
+  className={`p-3 rounded-2xl ${
+    isOpen
+      ? "bg-black text-white"
+      : "bg-gray-400 cursor-not-allowed"
+  }`}
+>
+        Generate Token
+      </button>
         )}
          
          {token && (

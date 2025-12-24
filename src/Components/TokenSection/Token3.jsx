@@ -8,8 +8,28 @@ const serviceName = "Library";
 const Token3 = () => {
     const [showQueue, setShowQueue] = useState(false);
   const [queueData, setQueueData] = useState([]);
-  const [token, setToken] = useState("");
+  const [token, setToken] = useState(null);
   const [show, setShow] = useState(false);
+const [isOpen, setIsOpen] = useState(false);
+
+useEffect(() => {
+  const fetchAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Library/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.error("Failed to fetch access status", err);
+    }
+  };
+
+  fetchAccess(); // initial call
+
+  const interval = setInterval(fetchAccess, 3000); // every 3 sec
+  return () => clearInterval(interval);
+}, []);
 
 useEffect(() => {
   const interval = setInterval(() => {
@@ -43,7 +63,7 @@ const expectedTime = currentQueue * avgTime;
   const handleCancelToken = async () => {
   try {
     await fetch(
-      `http://localhost:5000/api/tokens/cancel/${token.serviceName}/${token.tokenNumber}`,
+      `http://localhost:5000/api/tokens/cancel/Library/${token.tokenNumber}`,
       {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -58,7 +78,7 @@ const expectedTime = currentQueue * avgTime;
     // Optionally update queueData locally
     setQueueData(prev =>
       prev.map(t =>
-        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Canceled' } : t
+        t.tokenNumber === token.tokenNumber ? { ...t, status: 'Cancelled' } : t
       )
     );
 
@@ -68,40 +88,71 @@ const expectedTime = currentQueue * avgTime;
   }
 };
 
- useEffect(() => {
+useEffect(() => {
   const saved = localStorage.getItem("LibraryToken");
-  if (saved) setToken(JSON.parse(saved));
+
+  if (saved && saved !== "undefined") {
+    try {
+      setToken(JSON.parse(saved));
+    } catch (e) {
+      console.error("Invalid token in localStorage", e);
+      localStorage.removeItem("LibraryToken");
+    }
+  }
 }, []);
 
-   const handleGenerate = async () => {
-     const userName = localStorage.getItem("queueUserName"); // ✅ just get the string
-  if (!userName) return alert("No user logged in");
-    try {
-      const res = await fetch("http://localhost:5000/api/tokens/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userName, serviceName: "Library" })
-      });
 
-      const data = await res.json();
-      setToken(data.token);
-      localStorage.setItem(`${serviceName}Token`, JSON.stringify(data.token)); // 🔐 Save token
-      setShow(true);
-      fetchQueue();
-    } catch (err) {
-      console.error(err);
-      alert("Failed to generate token");
+   
+const handleGenerate = async () => {
+  const userName = localStorage.getItem("queueUserName");
+  if (!userName) return alert("No user logged in");
+
+  try {
+    const res = await fetch("http://localhost:5000/api/tokens/generate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userName,
+        serviceName: "Library",
+      }),
+    });
+
+    // ✅ VERY IMPORTANT
+    if (!res.ok) {
+      const text = await res.text();
+      console.error("Backend error:", text);
+      alert("Service is closed or server error");
+      return;
     }
-  };
+
+    const data = await res.json();
+
+    setToken(data.token);
+    localStorage.setItem(serviceName, JSON.stringify(data.token));
+    setShow(true);
+
+  } catch (err) {
+    console.error("Generate token failed:", err);
+    alert("Failed to generate token");
+  }
+};
+
 
 const fetchQueue = async () => {
   try {
-    const res = await fetch("http://localhost:5000/api/tokens/list/library");
+    const res = await fetch("http://localhost:5000/api/tokens/list/Library");
     const data = await res.json();
+
+    if (!Array.isArray(data)) {
+      console.error("Queue API did not return array:", data);
+      setQueueData([]);
+      return;
+    }
+
     setQueueData(data);
   } catch (err) {
     console.error(err);
-    alert("Failed to fetch queue");
+    setQueueData([]);
   }
 };
   return (
@@ -119,12 +170,17 @@ const fetchQueue = async () => {
       </div>
       <div className='flex justify-between '>
        {!token && (
-          <button 
-            className='p-3 bg-black text-white rounded-2xl hover:bg-white hover:text-black hover:border hover:font-bold'
-            onClick={handleGenerate}
-          >
-            Generate Token
-          </button>
+          <button
+  disabled={!isOpen}
+  onClick={handleGenerate}
+  className={`p-3 rounded-2xl ${
+    isOpen
+      ? "bg-black text-white"
+      : "bg-gray-400 cursor-not-allowed"
+  }`}
+>
+        Generate Token
+      </button>
         )}
        {token && (
           <button 

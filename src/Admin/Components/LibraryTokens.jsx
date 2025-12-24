@@ -12,7 +12,7 @@ const statusStyles = {
 };
 const LibraryTokens = () => {
   const [tokens, setTokens] = useState([]);
-
+const [isOpen, setIsOpen] = useState(false);
   // Fetch tokens
   const fetchTokens = async () => {
     try {
@@ -24,8 +24,21 @@ const LibraryTokens = () => {
     }
   };
 
+   const fetchAccessStatus = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Library/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error fetching access status", err);
+    }
+  };
+
   useEffect(() => {
     fetchTokens();
+    fetchAccessStatus();
   }, []);
 
   // Update status
@@ -53,6 +66,26 @@ const updateStatus = async (tokenNumber, newStatus) => {
   }
 };
 
+
+  const toggleAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Library/access",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOpen: !isOpen }),
+        }
+      );
+
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error toggling access", err);
+    }
+  };
+
+
 const handleProcess = (tokenNumber) =>
   updateStatus(tokenNumber, "serving");
 
@@ -69,7 +102,14 @@ const handleReject = (tokenNumber) =>
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Library Tokens</h1>
-
+        <button
+          onClick={toggleAccess}
+          className={`px-4 py-2 ml-[59%] rounded ${
+            isOpen ? "bg-green-600" : "bg-red-600"
+          } text-white`}
+        >
+          {isOpen ? "Disable Tokens" : "Enable Tokens"}
+        </button>
         <button
           onClick={fetchTokens}
           className="bg-blue-600 text-white px-4 py-2 rounded"

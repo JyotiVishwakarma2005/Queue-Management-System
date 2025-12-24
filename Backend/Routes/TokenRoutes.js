@@ -1,5 +1,6 @@
 import express from "express";
 import { getTokenModel } from "../Models/Token.js";
+import ServiceStatus from "../Models/ServiceStatus.js";
 
 const router = express.Router();
 
@@ -11,10 +12,21 @@ const servicePrefixes = {
   FeesPayment: "Fp",
 };
 
-/* ============================================================
-   ⭐ NEW ROUTE FOR ADMIN PANEL
-   GET /api/tokens          → returns ALL tokens from ALL services
-   ============================================================ */
+
+router.get("/service/:serviceName/access", async (req, res) => {
+  try {
+    const status = await ServiceStatus.findOne({
+      serviceName: req.params.serviceName,
+    });
+
+    res.json(status || { isOpen: false });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+
 router.get("/", async (req, res) => {
   try {
     const allServices = Object.keys(servicePrefixes);
@@ -39,10 +51,20 @@ router.get("/", async (req, res) => {
 router.post("/generate", async (req, res) => {
   const { userName, serviceName } = req.body;
 
-  if (!serviceName)
+  if (!serviceName) {
     return res.status(400).json({ error: "Service name is required" });
+  }
 
   try {
+    // Check if service is open
+    const status = await ServiceStatus.findOne({ serviceName });
+
+    if (!status || !status.isOpen) {
+      return res
+        .status(403)
+        .json({ error: "Token generation is currently disabled by admin" });
+    }
+
     const TokenModel = getTokenModel(serviceName);
 
     const lastToken = await TokenModel.findOne().sort({ tokenNumber: -1 });
@@ -64,30 +86,42 @@ router.post("/generate", async (req, res) => {
 
     res.json({ message: "Token Generated", token: newToken });
   } catch (err) {
-    console.error(err);
+    console.error("Generate token error:", err);
     res.status(500).json({ error: "Failed to generate token" });
   }
 });
 
-/* ============================================================
-   LIST TOKENS BY SERVICE
-   Example: /api/tokens/list/Admission
-   ============================================================ */
+const SERVICE_MAP = {
+  admission: "Admission",
+  railwayconsession: "RailwayConsession",
+  library: "Library",
+  canteen: "Canteen",
+  feespayment: "FeesPayment",
+};
+
+
 router.get("/list/:service", async (req, res) => {
-  const { service } = req.params;
-
   try {
-    const TokenModel = getTokenModel(service);
+    const key = req.params.service.toLowerCase();
+    const serviceName = SERVICE_MAP[key];
 
-    const queue = await TokenModel
-      .find({ status: "pending" })   // 🚀 Only show new tokens
-      .sort({ createdAt: 1 });
+    if (!serviceName) {
+      return res.status(400).json({ error: "Invalid service name" });
+    }
+
+    const TokenModel = getTokenModel(serviceName);
+
+    const queue = await TokenModel.find({
+      status: { $ne: "completed" }
+    }).sort({ createdAt: 1 });
 
     res.json(queue);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Failed to fetch queue" });
   }
 });
+
 
 /* ============================================================
    FIXED QUEUE ROUTE
@@ -155,6 +189,24 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     res.status(500).json({ message: "Failed to update status", error: err });
   }
 });
+
+router.put("/service/:serviceName/access", async (req, res) => {
+  const { serviceName } = req.params;
+  const { isOpen } = req.body;
+
+  try {
+    const status = await ServiceStatus.findOneAndUpdate(
+      { serviceName },
+      { isOpen },
+      { upsert: true, new: true }
+    );
+
+    res.json(status);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 

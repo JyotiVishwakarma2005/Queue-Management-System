@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from "react";
 
 const statusStyles = {
@@ -11,63 +8,99 @@ const statusStyles = {
 };
 const AdmissionToken = () => {
   const [tokens, setTokens] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch tokens
   const fetchTokens = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/tokens/list/Admission");
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/list/Admission"
+      );
       const data = await res.json();
       setTokens(data);
     } catch (err) {
       console.log("Error fetching tokens", err);
     }
   };
+  const fetchAccessStatus = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Admission/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error fetching access status", err);
+    }
+  };
 
   useEffect(() => {
     fetchTokens();
+    fetchAccessStatus();
   }, []);
 
   // Update status
-const updateStatus = async (tokenNumber, newStatus) => {
-  try {
-    const res = await fetch(
-      `http://localhost:5000/api/tokens/Admission/status/${tokenNumber}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      }
-    );
+  const updateStatus = async (tokenNumber, newStatus) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/tokens/Admission/status/${tokenNumber}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
 
-       const updatedToken = await res.json();
+      const updatedToken = await res.json();
 
-    setTokens((prev) =>
-      prev.map((t) =>
-        t.tokenNumber === updatedToken.tokenNumber ? updatedToken : t
-      )
-    );
+      setTokens((prev) =>
+        prev.map((t) =>
+          t.tokenNumber === updatedToken.tokenNumber ? updatedToken : t
+        )
+      );
+    } catch (err) {
+      console.log("Error updating status:", err);
+    }
+  };
 
-  } catch (err) {
-    console.log("Error updating status:", err);
-  }
-};
+  const toggleAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/Admission/access",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOpen: !isOpen }),
+        }
+      );
 
-const handleProcess = (tokenNumber) =>
-  updateStatus(tokenNumber, "serving");
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error toggling access", err);
+    }
+  };
 
-const handleComplete = (tokenNumber) =>
-  updateStatus(tokenNumber, "completed");
+  const handleProcess = (tokenNumber) => updateStatus(tokenNumber, "serving");
 
-const handleReject = (tokenNumber) =>
-  updateStatus(tokenNumber, "cancelled");
+  const handleComplete = (tokenNumber) =>
+    updateStatus(tokenNumber, "completed");
 
-
+  const handleReject = (tokenNumber) => updateStatus(tokenNumber, "cancelled");
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Admission Tokens</h1>
+        <button
+          onClick={toggleAccess}
+          className={`px-4 py-2 ml-[55%] rounded ${
+            isOpen ? "bg-green-600" : "bg-red-600"
+          } text-white`}
+        >
+          {isOpen ? "Disable Tokens" : "Enable Tokens"}
+        </button>
 
         <button
           onClick={fetchTokens}
@@ -82,77 +115,76 @@ const handleReject = (tokenNumber) =>
       </p>
 
       <div className="space-y-4">
-        {tokens.map((token) => (
-          <div
-            key={token._id}
-            className="p-4 bg-white rounded-lg shadow-md flex justify-between items-center"
-          >
-            {/* LEFT SECTION */}
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span
-                  className={`font-bold ${
-                    statusStyles[token.status?.toLowerCase()] || ""
-                  } px-2 py-1 rounded-full`}
-                >
-                  {token.displayToken}
-                </span>
+        {tokens
+          .filter((token) => token.status?.toLowerCase() !== "completed")
+          .map((token) => (
+            <div
+              key={token._id}
+              className="p-4 bg-white rounded-lg shadow-md flex justify-between items-center"
+            >
+              {/* LEFT SECTION */}
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <span
+                    className={`font-bold ${
+                      statusStyles[token.status?.toLowerCase()] || ""
+                    } px-2 py-1 rounded-full`}
+                  >
+                    {token.displayToken}
+                  </span>
 
-                <span
-                  className={`text-sm ${
-                    statusStyles[token.status?.toLowerCase()] || ""
-                  } px-2 py-1 rounded-full`}
-                >
-                  {token.status}
-                </span>
+                  <span
+                    className={`text-sm ${
+                      statusStyles[token.status?.toLowerCase()] || ""
+                    } px-2 py-1 rounded-full`}
+                  >
+                    {token.status}
+                  </span>
+                </div>
+
+                <p className="font-semibold">{token.userName}</p>
+                <p className="text-sm text-gray-600">
+                  Service: {token.serviceName}
+                </p>
+                <p className="text-sm text-gray-600">
+                  Time: {new Date(token.time).toLocaleString()}
+                </p>
               </div>
 
-              <p className="font-semibold">{token.userName}</p>
-              <p className="text-sm text-gray-600">
-                Service: {token.serviceName}
-              </p>
-              <p className="text-sm text-gray-600">
-                Time: {new Date(token.time).toLocaleString()}
-              </p>
+              {/* BUTTONS */}
+              <div className="flex gap-2">
+                <button
+                  onClick={() => handleView(token)}
+                  className="bg-blue-500 text-white px-3 py-1 rounded"
+                >
+                  View
+                </button>
+                <button
+                  className="bg-blue-500 px-3 py-1 rounded text-white"
+                  onClick={() => handleProcess(token.tokenNumber)}
+                >
+                  Process
+                </button>
+
+                <button
+                  className="bg-green-600 px-3 py-1 rounded text-white"
+                  onClick={() => handleComplete(token.tokenNumber)}
+                >
+                  Complete
+                </button>
+
+                <button
+                  className="bg-red-500 px-3 py-1 rounded text-white"
+                  onClick={() => handleReject(token.tokenNumber)}
+                >
+                  Reject
+                </button>
+              </div>
             </div>
-
-            {/* BUTTONS */}
-            <div className="flex gap-2">
-              <button
-                onClick={() => handleView(token)}
-                className="bg-blue-500 text-white px-3 py-1 rounded"
-              >
-                View
-              </button>
-<button
-  className="bg-blue-500 px-3 py-1 rounded text-white"
-  onClick={() => handleProcess(token.tokenNumber)}
->
-  Process
-</button>
-
-<button
-  className="bg-green-600 px-3 py-1 rounded text-white"
-  onClick={() => handleComplete(token.tokenNumber)}
->
-  Complete
-</button>
-
-<button
-  className="bg-red-500 px-3 py-1 rounded text-white"
-  onClick={() => handleReject(token.tokenNumber)}
->
-  Reject
-</button>
-
-
-            </div>
-          </div>
-        ))}
+          ))}
       </div>
     </div>
   );
 };
 
 export default AdmissionToken;
-

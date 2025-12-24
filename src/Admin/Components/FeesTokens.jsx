@@ -1,6 +1,3 @@
-
-
-
 import React, { useState, useEffect } from "react";
 
 const statusStyles = {
@@ -11,64 +8,99 @@ const statusStyles = {
 };
 const FeesPayment = () => {
   const [tokens, setTokens] = useState([]);
+  const [isOpen, setIsOpen] = useState(false);
 
   // Fetch tokens
   const fetchTokens = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/tokens/list/FeesPayment");
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/list/FeesPayment"
+      );
       const data = await res.json();
       setTokens(data);
     } catch (err) {
       console.log("Error fetching tokens", err);
     }
   };
+  const fetchAccessStatus = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/FeesPayment/access"
+      );
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error fetching access status", err);
+    }
+  };
 
   useEffect(() => {
     fetchTokens();
+    fetchAccessStatus();
   }, []);
 
   // Update status
-const updateStatus = async (tokenNumber, newStatus) => {
-  try {
-    const res = await fetch(
-      `http://localhost:5000/api/tokens/FeesPayment/status/${tokenNumber}`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
-      }
-    );
+  const updateStatus = async (tokenNumber, newStatus) => {
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/tokens/FeesPayment/status/${tokenNumber}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ status: newStatus }),
+        }
+      );
 
-       const updatedToken = await res.json();
+      const updatedToken = await res.json();
 
-    setTokens((prev) =>
-      prev.map((t) =>
-        t.tokenNumber === updatedToken.tokenNumber ? updatedToken : t
-      )
-    );
+      setTokens((prev) =>
+        prev.map((t) =>
+          t.tokenNumber === updatedToken.tokenNumber ? updatedToken : t
+        )
+      );
+    } catch (err) {
+      console.log("Error updating status:", err);
+    }
+  };
 
-  } catch (err) {
-    console.log("Error updating status:", err);
-  }
-};
+  const toggleAccess = async () => {
+    try {
+      const res = await fetch(
+        "http://localhost:5000/api/tokens/service/FeesPayment/access",
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isOpen: !isOpen }),
+        }
+      );
 
-const handleProcess = (tokenNumber) =>
-  updateStatus(tokenNumber, "serving");
+      const data = await res.json();
+      setIsOpen(data.isOpen);
+    } catch (err) {
+      console.log("Error toggling access", err);
+    }
+  };
 
-const handleComplete = (tokenNumber) =>
-  updateStatus(tokenNumber, "completed");
+  const handleProcess = (tokenNumber) => updateStatus(tokenNumber, "serving");
 
-const handleReject = (tokenNumber) =>
-  updateStatus(tokenNumber, "cancelled");
+  const handleComplete = (tokenNumber) =>
+    updateStatus(tokenNumber, "completed");
 
-
+  const handleReject = (tokenNumber) => updateStatus(tokenNumber, "cancelled");
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">Fees Payment Tokens</h1>
-
+        <button
+          onClick={toggleAccess}
+          className={`px-4 py-2 ml-[52%] rounded ${
+            isOpen ? "bg-green-600" : "bg-red-600"
+          } text-white`}
+        >
+          {isOpen ? "Disable Tokens" : "Enable Tokens"}
+        </button>
         <button
           onClick={fetchTokens}
           className="bg-blue-600 text-white px-4 py-2 rounded"
@@ -124,28 +156,26 @@ const handleReject = (tokenNumber) =>
               >
                 View
               </button>
-<button
-  className="bg-blue-500 px-3 py-1 rounded text-white"
-  onClick={() => handleProcess(token.tokenNumber)}
->
-  Process
-</button>
+              <button
+                className="bg-blue-500 px-3 py-1 rounded text-white"
+                onClick={() => handleProcess(token.tokenNumber)}
+              >
+                Process
+              </button>
 
-<button
-  className="bg-green-600 px-3 py-1 rounded text-white"
-  onClick={() => handleComplete(token.tokenNumber)}
->
-  Complete
-</button>
+              <button
+                className="bg-green-600 px-3 py-1 rounded text-white"
+                onClick={() => handleComplete(token.tokenNumber)}
+              >
+                Complete
+              </button>
 
-<button
-  className="bg-red-500 px-3 py-1 rounded text-white"
-  onClick={() => handleReject(token.tokenNumber)}
->
-  Reject
-</button>
-
-
+              <button
+                className="bg-red-500 px-3 py-1 rounded text-white"
+                onClick={() => handleReject(token.tokenNumber)}
+              >
+                Reject
+              </button>
             </div>
           </div>
         ))}
@@ -155,4 +185,3 @@ const handleReject = (tokenNumber) =>
 };
 
 export default FeesPayment;
-
