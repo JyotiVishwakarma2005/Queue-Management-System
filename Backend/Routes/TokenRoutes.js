@@ -207,7 +207,45 @@ router.put("/service/:serviceName/access", async (req, res) => {
   }
 });
 
+router.get("/completed", async (req, res) => {
+  try {
+    const services = Object.keys(servicePrefixes);
+    let completedTokens = [];
 
+    for (const service of services) {
+      const TokenModel = getTokenModel(service);
+      const tokens = await TokenModel.find({ status: "completed" });
+
+      completedTokens.push(
+        ...tokens.map(t => ({
+          ...t.toObject(),
+          serviceName: service
+        }))
+      );
+    }
+
+    res.json(completedTokens);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching completed tokens" });
+  }
+});
+
+// GET /api/tokens/user/:serviceName/:userName
+router.get("/user/:serviceName/:userName", async (req, res) => {
+  try {
+    const { serviceName, userName } = req.params;
+    const TokenModel = getTokenModel(serviceName);
+
+    const token = await TokenModel.findOne({
+      userName,
+      status: { $in: ["pending", "serving"] }, // only active tokens
+    });
+
+    res.json(token); // token or null
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching active token" });
+  }
+});
 
 
 export default router;

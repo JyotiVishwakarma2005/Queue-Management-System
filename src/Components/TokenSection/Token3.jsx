@@ -155,6 +155,42 @@ const fetchQueue = async () => {
     setQueueData([]);
   }
 };
+
+
+const checkActiveToken = async () => {
+  const userName = localStorage.getItem("queueUserName");
+  if (!userName) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/tokens/user/Library/${userName}`
+    );
+    const data = await res.json();
+
+    if (!data || !data._id) {
+      // Token completed or cancelled
+      localStorage.removeItem("LibraryToken");
+      setToken(null);
+      setShow(false);
+    } else {
+      // Token still active
+      setToken(data);
+      localStorage.setItem("LibraryToken", JSON.stringify(data));
+    }
+  } catch (err) {
+    console.error("Failed to fetch active token", err);
+  }
+};
+
+useEffect(() => {
+  checkActiveToken(); // check on mount
+
+  const interval = setInterval(checkActiveToken, 3000); // check every 3 seconds
+  return () => clearInterval(interval);
+}, []);
+
+
+
   return (
     <div>
        <div className=' token h-80 w-90 bg-white flex flex-col justify-around p-3 shadow-md shadow-gray-500 '>

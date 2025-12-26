@@ -102,7 +102,7 @@ const handleReject = (tokenNumber) =>
          <button
           onClick={toggleAccess}
           className={`px-4 py-2 ml-[58%] rounded ${
-            isOpen ? "bg-green-600" : "bg-red-600"
+            isOpen ? "bg-red-600" : "bg-green-600"
           } text-white`}
         >
           {isOpen ? "Disable Tokens" : "Enable Tokens"}

@@ -174,6 +174,38 @@ const fetchQueue = async () => {
   }
 };
 
+// Check active token from backend
+const checkActiveToken = async () => {
+  const userName = localStorage.getItem("queueUserName");
+  if (!userName) return;
+
+  try {
+    const res = await fetch(
+      `http://localhost:5000/api/tokens/user/Admission/${userName}`
+    );
+    const data = await res.json();
+
+    if (!data || !data._id) {
+      // Token completed or cancelled
+      localStorage.removeItem("AdmissionToken");
+      setToken(null);
+      setShow(false);
+    } else {
+      // Token still active
+      setToken(data);
+      localStorage.setItem("AdmissionToken", JSON.stringify(data));
+    }
+  } catch (err) {
+    console.error("Failed to fetch active token", err);
+  }
+};
+
+useEffect(() => {
+  checkActiveToken(); // check on mount
+
+  const interval = setInterval(checkActiveToken, 3000); // check every 3 seconds
+  return () => clearInterval(interval);
+}, []);
 
 
   return (
