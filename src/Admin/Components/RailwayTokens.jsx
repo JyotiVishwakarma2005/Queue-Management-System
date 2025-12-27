@@ -10,6 +10,23 @@ const statusStyles = {
 const RailwayTokens = () => {
   const [tokens, setTokens] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
+    const [selectedToken, setSelectedToken] = useState(null);
+const [showViewModal, setShowViewModal] = useState(false);
+const [currentTime, setCurrentTime] = useState(new Date());
+
+
+useEffect(() => {
+  const interval = setInterval(() => {
+    setCurrentTime(new Date());
+  }, 1000); // updates every second
+
+  return () => clearInterval(interval);
+}, []);
+
+const handleView = (token) => {
+  setSelectedToken(token);
+  setShowViewModal(true);
+};
 
   // Fetch tokens
   const fetchTokens = async () => {
@@ -95,6 +112,30 @@ const handleComplete = (tokenNumber) =>
 const handleReject = (tokenNumber) =>
   updateStatus(tokenNumber, "cancelled");
 
+
+ const getDuration = (start, end) => {
+  if (!start || !end || isNaN(start) || isNaN(end)) return "0m 0s";
+
+  const diff = Math.max(0, Math.floor((end - start) / 1000));
+
+  const minutes = Math.floor(diff / 60);
+  const seconds = diff % 60;
+
+  return `${minutes}m ${seconds}s`;
+};
+const getQueuePositionAtEntry = (token) => {
+  if (!token || !tokens.length) return "--";
+
+  const tokenTime = new Date(token.time);
+
+  return (
+    tokens.filter(
+      (t) =>
+        t.serviceName === token.serviceName &&
+        new Date(t.time) <= tokenTime
+    ).length
+  );
+};
 
 
   return (
@@ -191,6 +232,71 @@ const handleReject = (tokenNumber) =>
           </div>
         ))}
       </div>
+       {showViewModal && selectedToken && (
+  <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50">
+    <div className="bg-white p-6 rounded-lg w-96 shadow-lg">
+      <h2 className="text-xl font-bold mb-4">Token Details</h2>
+
+      <p><b>Token:</b> {selectedToken.displayToken}</p>
+      <p><b>User:</b> {selectedToken.userName}</p>
+      <p><b>Service:</b> {selectedToken.serviceName}</p>
+      <p><b>Status:</b> {selectedToken.status}</p>
+      <p>
+        <b>Time:</b>{" "}
+        {new Date(selectedToken.time).toLocaleString()}
+      </p>
+
+      {/* METRICS */}
+<div className="grid grid-cols-3 gap-4 mt-4">
+
+  {/* Waiting Time */}
+  <div className="bg-blue-50 p-3 rounded-lg text-center">
+    <p className="text-xs text-gray-500">Waiting Time</p>
+     <p className="font-bold text-blue-700">
+  {getDuration(
+    new Date(selectedToken.time),
+    selectedToken.status === "pending" || !selectedToken.servedAt
+      ? currentTime
+      : new Date(selectedToken.servedAt)
+  )}
+</p>
+  </div>
+
+  {/* Service Time */}
+  <div className="bg-green-50 p-3 rounded-lg text-center">
+    <p className="text-xs text-gray-500">Service Time</p>
+    <p className="font-bold text-green-700">
+       {selectedToken.status === "serving"
+    ? getDuration(new Date(selectedToken.time), currentTime)
+    : selectedToken.status === "completed" && selectedToken.completedAt
+    ? getDuration(
+        new Date(selectedToken.time),
+        new Date(selectedToken.completedAt)
+      )
+    : "0m 0s"}
+</p>
+  </div>
+
+  {/* Queue Position */}
+  <div className="bg-purple-50 p-3 rounded-lg text-center">
+    <p className="text-xs text-gray-500">Queue Position</p>
+    <p className="font-bold text-purple-700">
+      {getQueuePositionAtEntry(selectedToken)}
+    </p>
+  </div>
+
+</div>
+
+
+      <button
+        className="mt-4 bg-red-500 text-white px-4 py-1 rounded"
+        onClick={() => setShowViewModal(false)}
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };

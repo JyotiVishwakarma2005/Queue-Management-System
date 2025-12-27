@@ -178,17 +178,32 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     const TokenModel = getTokenModel(service);
     const token = await TokenModel.findOne({ tokenNumber });
 
-    if (!token) return res.status(404).json({ message: "Token not found" });
+    if (!token) {
+      return res.status(404).json({ message: "Token not found" });
+    }
 
-    token.status = status;  
+    // 🔹 WHEN ADMIN STARTS SERVICE
+    if (status === "serving" && !token.servedAt) {
+      token.servedAt = new Date();
+    }
+
+    // 🔹 WHEN ADMIN COMPLETES SERVICE
+    if (status === "completed") {
+      token.completedAt = new Date();
+    }
+
+    token.status = status;
     await token.save();
 
     res.json(token);
-
   } catch (err) {
-    res.status(500).json({ message: "Failed to update status", error: err });
+    res.status(500).json({
+      message: "Failed to update token status",
+      error: err.message,
+    });
   }
 });
+
 
 router.put("/service/:serviceName/access", async (req, res) => {
   const { serviceName } = req.params;

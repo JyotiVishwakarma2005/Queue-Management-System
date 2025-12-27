@@ -10,7 +10,16 @@ const tokenSchema = new mongoose.Schema({
     enum: ["pending", "serving", "completed", "cancelled"],
     default: "pending"
   },
-  time: { type: Date, default: Date.now }
+  time: { type: Date, default: Date.now },
+  servedAt: {
+  type: Date,
+  default: null,
+},
+completedAt: {
+  type: Date,
+  default: null,
+},
+
 });
 
 // Dynamic model by service name
