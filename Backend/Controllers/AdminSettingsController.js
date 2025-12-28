@@ -1,28 +1,28 @@
 import AdminSettings from "../Models/AdminSettings.js";
 
-// GET settings
 export const getSettings = async (req, res) => {
   try {
-    const settings = await AdminSettings.findOne();
+    const settings = await AdminSettings.findOne({
+      adminId: req.admin.id,
+    });
+
     res.json(settings);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching settings" });
+  } catch (err) {
+    res.status(500).json({ message: "Failed to fetch settings" });
   }
 };
 
-// UPDATE settings
 export const updateSettings = async (req, res) => {
   try {
-    const { profile, notifications } = req.body;
-
     const settings = await AdminSettings.findOneAndUpdate(
-      {},
-      { profile, notifications },
+      { adminId: req.admin.id },
+      req.body,
       { new: true, upsert: true }
     );
 
-    res.json({ message: "Settings updated", settings });
-  } catch (error) {
-    res.status(500).json({ message: "Error updating settings" });
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to update settings" });
   }
 };
+
