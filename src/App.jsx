@@ -1,6 +1,6 @@
 
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState ,useEffect } from "react";
 
 import Navbar from "./Components/Navbar/Navbar";
 
@@ -22,6 +22,7 @@ import CanteenTokens from "./Admin/Components/CanteenTokens";
 import FeesTokens from "./Admin/Components/FeesTokens";
 import CompletedTokens from "./Admin/Components/CompletedTokens";
 import Settings from "./Admin/Components/Settings";
+import { socket } from "./socket";
 
 const AppWrapper = () => {
   const location = useLocation();
@@ -37,6 +38,16 @@ const AppWrapper = () => {
     window.location.reload();
   };
 
+
+   useEffect(() => {
+    socket.on("connect", () => {
+      console.log("🟢 Connected to WebSocket:", socket.id);
+    });
+
+    return () => {
+      socket.off("connect");
+    };
+  }, []);
   return (
     <>
       {/* Hide navbar on admin pages */}

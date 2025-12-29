@@ -1,17 +1,56 @@
 import { UtensilsCrossed } from 'lucide-react';
 import { ArrowRight } from 'lucide-react';
-import { useEffect, useState } from "react";
+import { useEffect, useState ,useContext} from "react";
 import TokenCard from "./TokenCard";
 import QueueModal from "./QueueModal";
+import { socket } from "../../socket.js";
+import { TokenContext } from "../../socketProvider.jsx";
 
 const serviceName = "Canteen";
 
 const Token4 = () => {
+  const { updatedToken } = useContext(TokenContext);
    const [showQueue, setShowQueue] = useState(false);
   const [queueData, setQueueData] = useState([]);
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
 const [isOpen, setIsOpen] = useState(false);
+ const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    if (updatedToken?.serviceName === "Admission") {
+      setToken(updatedToken);
+      localStorage.setItem("AdmissionToken", JSON.stringify(updatedToken));
+    }
+  }, [updatedToken]);
+
+
+useEffect(() => {
+  const savedUserName = localStorage.getItem("queueUserName");
+  if (!savedUserName) return;
+
+  // join user's private room
+  socket.emit("join", savedUserName);
+  console.log("🟢 Joined socket room:", savedUserName);
+
+  // define the callback
+  const handleTokenUpdate = (updatedToken) => {
+    console.log("🔔 Realtime token update:", updatedToken);
+    if (updatedToken.serviceName === "Admission") {
+      setToken(updatedToken);
+      localStorage.setItem("AdmissionToken", JSON.stringify(updatedToken));
+    }
+    fetchQueue(); // optional
+  };
+
+  // attach listener
+  socket.on("token_updated", handleTokenUpdate);
+
+  // cleanup: remove only this listener
+  return () => {
+    socket.off("token_updated", handleTokenUpdate);
+  };
+}, []); // empty dependency array → run once
 
 
 useEffect(() => {
@@ -108,8 +147,6 @@ const handleCancelToken = async () => {
     alert('Failed to cancel token');
   }
 };
-
-const [user, setUser] = useState(null);
 
 useEffect(() => {
   const savedUser = localStorage.getItem("user");

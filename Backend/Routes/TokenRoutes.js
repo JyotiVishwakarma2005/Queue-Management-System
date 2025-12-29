@@ -1,6 +1,7 @@
 import express from "express";
 import { getTokenModel } from "../Models/Token.js";
 import ServiceStatus from "../Models/ServiceStatus.js";
+import { getIO } from "../socketB.js"
 
 const router = express.Router();
 
@@ -11,7 +12,6 @@ const servicePrefixes = {
   Canteen: "C",
   FeesPayment: "Fp",
 };
-
 
 router.get("/service/:serviceName/access", async (req, res) => {
   try {
@@ -24,8 +24,6 @@ router.get("/service/:serviceName/access", async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
-
 
 router.get("/", async (req, res) => {
   try {
@@ -99,7 +97,6 @@ const SERVICE_MAP = {
   feespayment: "FeesPayment",
 };
 
-
 router.get("/list/:service", async (req, res) => {
   try {
     const key = req.params.service.toLowerCase();
@@ -112,7 +109,7 @@ router.get("/list/:service", async (req, res) => {
     const TokenModel = getTokenModel(serviceName);
 
     const queue = await TokenModel.find({
-      status: { $ne: "completed" }
+      status: { $ne: "completed" },
     }).sort({ createdAt: 1 });
 
     res.json(queue);
@@ -121,7 +118,6 @@ router.get("/list/:service", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch queue" });
   }
 });
-
 
 /* ============================================================
    FIXED QUEUE ROUTE
@@ -154,11 +150,13 @@ router.put("/cancel/:service/:tokenNumber", async (req, res) => {
       return res.status(400).json({ message: "Invalid service" });
 
     const token = await TokenModel.findOne({ tokenNumber });
-    if (!token)
-      return res.status(404).json({ message: "Token not found" });
+    if (!token) return res.status(404).json({ message: "Token not found" });
 
     token.status = "cancelled";
     await token.save();
+
+    const io = getIO();
+    io.to(token.userName).emit("token_updated", token);
 
     res.json(token);
   } catch (err) {
@@ -167,7 +165,6 @@ router.put("/cancel/:service/:tokenNumber", async (req, res) => {
       .status(500)
       .json({ message: "Failed to cancel token", error: err.message });
   }
-  
 });
 
 router.put("/:service/status/:tokenNumber", async (req, res) => {
@@ -195,6 +192,11 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     token.status = status;
     await token.save();
 
+    // 🔔 Emit WebSocket event AFTER saving
+    const io = getIO();
+  console.log("Emitting to room:", token.userName, "status:", token.status);
+io.to(token.userName).emit("token_updated", token);
+
     res.json(token);
   } catch (err) {
     res.status(500).json({
@@ -203,7 +205,6 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     });
   }
 });
-
 
 router.put("/service/:serviceName/access", async (req, res) => {
   const { serviceName } = req.params;
@@ -232,9 +233,9 @@ router.get("/completed", async (req, res) => {
       const tokens = await TokenModel.find({ status: "completed" });
 
       completedTokens.push(
-        ...tokens.map(t => ({
+        ...tokens.map((t) => ({
           ...t.toObject(),
-          serviceName: service
+          serviceName: service,
         }))
       );
     }
@@ -261,6 +262,5 @@ router.get("/user/:serviceName/:userName", async (req, res) => {
     res.status(500).json({ message: "Error fetching active token" });
   }
 });
-
 
 export default router;
