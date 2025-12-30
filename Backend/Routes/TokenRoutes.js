@@ -2,6 +2,7 @@ import express from "express";
 import { getTokenModel } from "../Models/Token.js";
 import ServiceStatus from "../Models/ServiceStatus.js";
 import { getIO } from "../socketB.js"
+import  notifyQueueUsers  from "../services/NotificationService.js";
 
 const router = express.Router();
 
@@ -12,6 +13,7 @@ const servicePrefixes = {
   Canteen: "C",
   FeesPayment: "Fp",
 };
+
 
 router.get("/service/:serviceName/access", async (req, res) => {
   try {
@@ -154,10 +156,9 @@ router.put("/cancel/:service/:tokenNumber", async (req, res) => {
 
     token.status = "cancelled";
     await token.save();
-
     const io = getIO();
     io.to(token.userName).emit("token_updated", token);
-
+    await notifyQueueUsers(service, io);
     res.json(token);
   } catch (err) {
     console.error(err);
@@ -175,27 +176,21 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     const TokenModel = getTokenModel(service);
     const token = await TokenModel.findOne({ tokenNumber });
 
-    if (!token) {
-      return res.status(404).json({ message: "Token not found" });
-    }
+    if (!token) return res.status(404).json({ message: "Token not found" });
 
-    // 🔹 WHEN ADMIN STARTS SERVICE
-    if (status === "serving" && !token.servedAt) {
-      token.servedAt = new Date();
-    }
-
-    // 🔹 WHEN ADMIN COMPLETES SERVICE
-    if (status === "completed") {
-      token.completedAt = new Date();
-    }
+    if (status === "serving" && !token.servedAt) token.servedAt = new Date();
+    if (status === "completed") token.completedAt = new Date();
 
     token.status = status;
     await token.save();
 
-    // 🔔 Emit WebSocket event AFTER saving
     const io = getIO();
-  console.log("Emitting to room:", token.userName, "status:", token.status);
-io.to(token.userName).emit("token_updated", token);
+
+    // 🔹 Emit token update to this user
+    io.to(token.userName).emit("token_updated", token);
+
+    // 🔹 Emit notifications to current & next users in queue
+    await notifyQueueUsers(service, io);
 
     res.json(token);
   } catch (err) {
@@ -205,6 +200,8 @@ io.to(token.userName).emit("token_updated", token);
     });
   }
 });
+
+
 
 router.put("/service/:serviceName/access", async (req, res) => {
   const { serviceName } = req.params;
@@ -262,5 +259,7 @@ router.get("/user/:serviceName/:userName", async (req, res) => {
     res.status(500).json({ message: "Error fetching active token" });
   }
 });
+
+
 
 export default router;

@@ -23,7 +23,7 @@ import FeesTokens from "./Admin/Components/FeesTokens";
 import CompletedTokens from "./Admin/Components/CompletedTokens";
 import Settings from "./Admin/Components/Settings";
 import { socket } from "./socket";
-
+import NotificationsPage from "./Components/Navbar/NotificationPage";
 const AppWrapper = () => {
   const location = useLocation();
 
@@ -61,6 +61,7 @@ const AppWrapper = () => {
         <Route path="/" element={<Main />} />
         <Route path="/aboutus" element={<AboutUs />} />
         <Route path="/contact" element={<Contact />} />
+        <Route path="/notifications" element={<NotificationsPage />} />
 
         {/* Admin Login (no layout) */}
         <Route path="/admin/login" element={<AdminLogin />} />
