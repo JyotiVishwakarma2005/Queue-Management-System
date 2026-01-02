@@ -49,9 +49,9 @@ router.get("/", async (req, res) => {
    GENERATE TOKEN
    ============================================================ */
 router.post("/generate", async (req, res) => {
-  const { userName, serviceName } = req.body;
+  const { userId, userName, serviceName } = req.body;
 
-  if (!serviceName) {
+  if (!userId || !userName || !serviceName) {
     return res.status(400).json({ error: "Service name is required" });
   }
 
@@ -76,6 +76,7 @@ router.post("/generate", async (req, res) => {
       .padStart(3, "0")}`;
 
     const newToken = new TokenModel({
+      userId,
       userName,
       serviceName,
       tokenNumber: newTokenNumber,
@@ -90,6 +91,10 @@ router.post("/generate", async (req, res) => {
     res.status(500).json({ error: "Failed to generate token" });
   }
 });
+
+
+
+
 
 const SERVICE_MAP = {
   admission: "Admission",
@@ -168,6 +173,39 @@ router.put("/cancel/:service/:tokenNumber", async (req, res) => {
   }
 });
 
+// router.put("/:service/status/:tokenNumber", async (req, res) => {
+//   const { service, tokenNumber } = req.params;
+//   const { status } = req.body;
+
+//   try {
+//     const TokenModel = getTokenModel(service);
+//     const token = await TokenModel.findOne({ tokenNumber });
+
+//     if (!token) return res.status(404).json({ message: "Token not found" });
+
+//     if (status === "serving" && !token.servedAt) token.servedAt = new Date();
+//     if (status === "completed") token.completedAt = new Date();
+
+//     token.status = status;
+//     await token.save();
+
+//     const io = getIO();
+
+//     // 🔹 Emit token update to this user
+//     io.to(token.userName).emit("token_updated", token);
+
+//     // 🔹 Emit notifications to current & next users in queue
+//     await notifyQueueUsers(service, io);
+
+//     res.json(token);
+//   } catch (err) {
+//     res.status(500).json({
+//       message: "Failed to update token status",
+//       error: err.message,
+//     });
+//   }
+// });
+
 router.put("/:service/status/:tokenNumber", async (req, res) => {
   const { service, tokenNumber } = req.params;
   const { status } = req.body;
@@ -176,30 +214,64 @@ router.put("/:service/status/:tokenNumber", async (req, res) => {
     const TokenModel = getTokenModel(service);
     const token = await TokenModel.findOne({ tokenNumber });
 
-    if (!token) return res.status(404).json({ message: "Token not found" });
+    if (!token)
+      return res.status(404).json({ message: "Token not found" });
 
-    if (status === "serving" && !token.servedAt) token.servedAt = new Date();
-    if (status === "completed") token.completedAt = new Date();
+    // update timestamps based on status
+    const now = new Date();
+    switch (status) {
+      case "serving":
+        if (!token.servedAt) token.servedAt = now;
+        break;
+      case "completed":
+        token.completedAt = now;
+        break;
+      case "cancelled":
+        token.cancelledAt = now;
+        break;
+    }
 
     token.status = status;
     await token.save();
 
     const io = getIO();
 
-    // 🔹 Emit token update to this user
-    io.to(token.userName).emit("token_updated", token);
+    // Emit only if userId exists
+    if (token.userId) {
+      console.log(
+        "🔔 Emitting token_updated to userId:",
+        token.userId.toString(),
+        "status:",
+        status
+      );
 
-    // 🔹 Emit notifications to current & next users in queue
-    await notifyQueueUsers(service, io);
+      io.to(token.userId.toString()).emit("token_updated", {
+        tokenNumber: token.tokenNumber,
+        service,
+        status,
+        message:
+          status === "completed"
+            ? "✅ Your token is completed"
+            : status === "cancelled"
+            ? "❌ Your token was cancelled by admin"
+            : "🔄 Your token is now being served",
+        createdAt: now,
+      });
+    } else {
+      console.log("❌ token.userId is missing, cannot emit notification");
+    }
 
     res.json(token);
   } catch (err) {
+    console.log("❌ Error updating token:", err);
     res.status(500).json({
       message: "Failed to update token status",
       error: err.message,
     });
   }
 });
+
+
 
 
 
@@ -260,6 +332,26 @@ router.get("/user/:serviceName/:userName", async (req, res) => {
   }
 });
 
+router.put("/admin/token/:id/complete", async (req, res) => {
+  const { service } = req.body;
+
+  const TokenModel = getTokenModel(service);
+
+  const completedToken = await TokenModel.findByIdAndUpdate(
+    req.params.id,
+    { status: "completed" },
+    { new: true }
+  );
+
+  // 🔔 VERY IMPORTANT
+  await notifyQueueUsers(service, req.io);
+
+  res.json({
+    success: true,
+    message: "Token completed",
+    completedToken,
+  });
+});
 
 
 export default router;

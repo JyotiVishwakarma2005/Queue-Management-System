@@ -4,54 +4,18 @@ import { useEffect, useState ,useContext} from "react";
 import TokenCard from "./TokenCard";
 import QueueModal from "./QueueModal";
 import { socket } from "../../socket.js";
-import { TokenContext } from "../../socketProvider.jsx";
+import { SocketContext } from "../../socketProvider.jsx";
 
 const serviceName = "Canteen";
 
 const Token4 = () => {
-  const { updatedToken } = useContext(TokenContext);
+  // const { updatedToken } = useContext(TokenContext);
    const [showQueue, setShowQueue] = useState(false);
   const [queueData, setQueueData] = useState([]);
   const [token, setToken] = useState("");
   const [show, setShow] = useState(false);
 const [isOpen, setIsOpen] = useState(false);
  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    if (updatedToken?.serviceName === "Admission") {
-      setToken(updatedToken);
-      localStorage.setItem("AdmissionToken", JSON.stringify(updatedToken));
-    }
-  }, [updatedToken]);
-
-
-useEffect(() => {
-  const savedUserName = localStorage.getItem("queueUserName");
-  if (!savedUserName) return;
-
-  // join user's private room
-  socket.emit("join", savedUserName);
-  console.log("🟢 Joined socket room:", savedUserName);
-
-  // define the callback
-  const handleTokenUpdate = (updatedToken) => {
-    console.log("🔔 Realtime token update:", updatedToken);
-    if (updatedToken.serviceName === "Admission") {
-      setToken(updatedToken);
-      localStorage.setItem("AdmissionToken", JSON.stringify(updatedToken));
-    }
-    fetchQueue(); // optional
-  };
-
-  // attach listener
-  socket.on("token_updated", handleTokenUpdate);
-
-  // cleanup: remove only this listener
-  return () => {
-    socket.off("token_updated", handleTokenUpdate);
-  };
-}, []); // empty dependency array → run once
-
 
 useEffect(() => {
   const fetchAccess = async () => {
@@ -157,37 +121,44 @@ useEffect(() => {
 
 const handleGenerate = async () => {
   const userName = localStorage.getItem("queueUserName");
-  if (!userName) return alert("No user logged in");
+  const userId = localStorage.getItem("queueUserId");
+  const serviceName = "Canteen"; // ✅ define it
+
+  if (!userId || !userName) {
+    alert("Please login again");
+    return;
+  }
 
   try {
     const res = await fetch("http://localhost:5000/api/tokens/generate", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        userId,
         userName,
-        serviceName: "Canteen",
+        serviceName,
       }),
     });
 
-    // ✅ VERY IMPORTANT
     if (!res.ok) {
-      const text = await res.text();
-      console.error("Backend error:", text);
-      alert("Service is closed or server error");
+      const error = await res.json();
+      console.error("Backend error:", error);
+      alert(error.error || "Service is closed");
       return;
     }
 
     const data = await res.json();
 
     setToken(data.token);
-    localStorage.setItem(serviceName, JSON.stringify(data.token));
+    localStorage.setItem("CanteenToken", JSON.stringify(data.token));
     setShow(true);
-
   } catch (err) {
     console.error("Generate token failed:", err);
-    alert("Failed to generate token");
+    alert("Server error");
   }
 };
+
+
 
 const fetchQueue = async () => {
   try {

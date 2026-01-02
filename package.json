@@ -4,10 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
-    "server": "cd Backend && nodemon server.js",
-    "client": "npm run vite",
-    "vite": "vite",
+    "dev": "concurrently \"npm run server\" \"npm run frontend\"",
+  "server": "cd Backend && nodemon server.js",
+  "frontend": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"

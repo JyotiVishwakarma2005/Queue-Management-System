@@ -1,6 +1,11 @@
 import mongoose from "mongoose";
 
 const tokenSchema = new mongoose.Schema({
+   userId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
   userName: String,
   serviceName: String,
   tokenNumber: Number,          // store numeric only
@@ -22,7 +27,6 @@ completedAt: {
 
 });
 
-// Dynamic model by service name
 export const getTokenModel = (service) => {
   return mongoose.models[service] || mongoose.model(service, tokenSchema);
 };

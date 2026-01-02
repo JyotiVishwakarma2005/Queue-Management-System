@@ -24,7 +24,7 @@ mongoose.connect("mongodb://localhost:27017/collegeQueueDb")
 // ✅ Socket.IO setup (NAMED export)
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173","http://localhost:5174"],
     methods: ["GET", "POST"]
   }
 });

@@ -1,39 +1,37 @@
-import { createContext, useContext, useState, useEffect } from "react";
-import { socket } from "../socket.js";
+
+import { createContext, useContext, useEffect, useState } from "react";
+import { socket } from "../socket"; // adjust your path
 
 const NotificationContext = createContext();
 
-export const NotificationProvider = ({ userName, children }) => {
+export const NotificationProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
 
-useEffect(() => {
-  if (!userName) return;
+  useEffect(() => {
+    // Listen to server events
+    socket.on("token_updated", (updatedToken) => {
+      console.log("🔔 New token update received:", updatedToken);
 
-  socket.emit("join", userName);
+      // Prepend the notification to the list
+      setNotifications((prev) => [
+        {
+          serviceName: updatedToken.serviceName,
+          message: `Your token is now ${updatedToken.status}`,
+          createdAt: updatedToken.updatedAt || new Date(),
+        },
+        ...prev,
+      ]);
+    });
 
-  const handleNotification = (notif) => {
-    console.log("🔔 Notification received:", notif); // Check if this logs
-    setNotifications((prev) => [notif, ...prev]);
-  };
-
-  socket.on("new_notification", handleNotification);
-
-  return () => {
-    socket.off("new_notification", handleNotification);
-  };
-}, [userName]);
-
+    // Clean up listener to avoid duplicates
+    return () => socket.off("token_updated");
+  }, []);
 
   return (
-    <NotificationContext.Provider value={{ notifications }}>
+    <NotificationContext.Provider value={{ notifications, setNotifications }}>
       {children}
     </NotificationContext.Provider>
   );
 };
 
-// ✅ Custom hook to access notifications
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) throw new Error("useNotifications must be used within NotificationProvider");
-  return context;
-};
+export const useNotifications = () => useContext(NotificationContext);
