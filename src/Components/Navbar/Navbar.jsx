@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import logo from "../../assets/Images/image.png";
 import { House, Info, Phone } from "lucide-react";
 import NotificationBell from "./notificatioBell";
+import { Menu, X } from "lucide-react";
 
 const Navbar = ({ onLogout }) => {
   const [open, setOpen] = useState(false);
@@ -52,25 +53,32 @@ const handleLogout = () => {
           </button>
         </ul>
 
-        {/* Hamburger Button */}
-        <button
-          className="md:hidden flex flex-col gap-1"
-          onClick={() => setOpen(!open)}
-        >
-          <span className="w-6 h-1 bg-white"></span>
-          <span className="w-6 h-1 bg-white"></span>
-          <span className="w-6 h-1 bg-white"></span>
-        </button>
+       <div className="md:hidden flex items-center gap-4">
+  {/* Notification Bell (Mobile) */}
+  <NotificationBell />
+
+  {/* Hamburger */}
+ <button
+  className="text-white"
+  onClick={() => setOpen(!open)}
+>
+  {open ? <X size={28} /> : <Menu size={28} />}
+</button>
+</div>
 
       </nav>
 
       {/* Mobile Menu */}
       {open && (
-        <ul className="md:hidden bg-[#462564] text-white flex flex-col gap-4 text-lg font-semibold p-4 shadow-lg">
+        <ul
+  className={`md:hidden bg-[#462564] text-white flex flex-col gap-4 text-lg font-semibold p-4 shadow-lg
+    transform transition-all duration-300 ease-in-out
+    ${open ? "opacity-100 scale-100 max-h-96" : "opacity-0 scale-95 max-h-0 overflow-hidden"}
+  `}
+>
           <li><Link to="/" onClick={() => setOpen(false)}>Home</Link></li>
           <li><Link to="/aboutus" onClick={() => setOpen(false)}>About Us</Link></li>
           <li><Link to="/contact" onClick={() => setOpen(false)}>Contact</Link></li>
-         <NotificationBell />
           {/* Logout Mobile */}
           <button 
             className="px-2 h-10 border-2 rounded-2xl hover:bg-amber-50 hover:text-[#341C4E]" 

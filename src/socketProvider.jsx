@@ -1,6 +1,6 @@
 import { useEffect, createContext, useState } from "react";
 import { socket } from "./socket";
-
+import { playNotificationSound } from "./Utils/NotificationSound";
 export const SocketContext = createContext();
 
 export const SocketProvider = ({ children }) => {
@@ -20,34 +20,47 @@ export const SocketProvider = ({ children }) => {
     );
   };
 
+useEffect(() => {
+  const userId = localStorage.getItem("queueUserId");
+  if (!userId) return;
+
+  socket.emit("join", userId);
+
+  const handleNotification = (data) => {
+    console.log("🔔 Notification received:", data);
+
+    playNotificationSound(); // 🔊 PLAY SOUND HERE
+
+    setNotifications((prev) => [
+      {
+        id: Date.now(),
+        serviceName: data.serviceName,
+        message: `Your token is ${data.status}`,
+        createdAt: data.updatedAt || new Date(),
+        read: false,
+      },
+      ...prev,
+    ]);
+  };
+
+  socket.on("token_updated", handleNotification);
+
+  return () => {
+    socket.off("token_updated", handleNotification);
+  };
+}, []);
+
+
+
   useEffect(() => {
-    const userId = localStorage.getItem("queueUserId");
-    if (!userId) return;
+  socket.on("new-notification", (data) => {
+    playNotificationSound(); // 🔔 sound here
+    setNotifications((prev) => [data, ...prev]);
+  });
 
-    socket.emit("join", userId);
-    console.log("🟢 Joined socket room:", userId);
+  return () => socket.off("new-notification");
+}, []);
 
-    const handleTokenUpdate = (data) => {
-      console.log("🔔 Token update received:", data);
-
-      setNotifications((prev) => [
-        {
-          id: Date.now(),
-          serviceName: data.serviceName,
-          message: `Your token is ${data.status}`,
-          createdAt: data.updatedAt || new Date(),
-          read: false,
-        },
-        ...prev,
-      ]);
-    };
-
-    socket.on("token_updated", handleTokenUpdate);
-
-    return () => {
-      socket.off("token_updated", handleTokenUpdate);
-    };
-  }, []);
 
   return (
     <SocketContext.Provider

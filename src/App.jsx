@@ -23,6 +23,8 @@ import FeesTokens from "./Admin/Components/FeesTokens";
 import CompletedTokens from "./Admin/Components/CompletedTokens";
 import Settings from "./Admin/Components/Settings";
 import { socket } from "./socket";
+import { initNotificationSound } from "../src/Utils/NotificationSound";
+
 import NotificationsPage from "./Components/Navbar/NotificationPage";
 const AppWrapper = () => {
   const location = useLocation();
@@ -48,6 +50,20 @@ const AppWrapper = () => {
       socket.off("connect");
     };
   }, []);
+
+  useEffect(() => {
+  const unlockSound = () => {
+    initNotificationSound();
+    window.removeEventListener("click", unlockSound);
+  };
+
+  window.addEventListener("click", unlockSound);
+
+  return () => {
+    window.removeEventListener("click", unlockSound);
+  };
+}, []);
+
   return (
     <>
       {/* Hide navbar on admin pages */}

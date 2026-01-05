@@ -28,7 +28,26 @@ completedAt: {
 });
 
 export const getTokenModel = (service) => {
-  return mongoose.models[service] || mongoose.model(service, tokenSchema);
+  const serviceMap = {
+    Admission: "admissions",
+     RailwayConcession: "railwayconcessions",
+  RailwayConsession: "railwayconcessions",
+    Library: "libraries",
+    Canteen: "canteens",
+    FeesPayment: "feespayments",
+  };
+
+  const collectionName = serviceMap[service];
+
+  if (!collectionName) {
+    throw new Error(`Invalid service: ${service}`);
+  }
+
+  const modelName = `${collectionName}_model`;
+
+  if (mongoose.models[modelName]) {
+    return mongoose.models[modelName];
+  }
+
+  return mongoose.model(modelName, tokenSchema, collectionName);
 };
-
-

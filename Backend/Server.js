@@ -9,7 +9,7 @@ import UserLoginRoutes from "./Routes/UserLoginRoutes.js";
 import adminSettingsRoutes from "./Routes/AdminSettingsRoutes.js";
 import adminAuthRoutes from "./Routes/adminAuthRoutes.js";
 import { setIO } from "./socketB.js"; 
-
+import adminRoutes from "./Routes/adminRoutes.js"
 const app = express();
 const server = http.createServer(app);
 
@@ -47,6 +47,7 @@ app.use("/api/tokens", tokenRoutes);
 app.use("/api/UserLogin", UserLoginRoutes);  
 app.use("/api/admin/settings", adminSettingsRoutes);
 app.use("/api/admin/auth", adminAuthRoutes);
+app.use("/api/admin", adminRoutes);
 
 app.get('/', (req, res) => {
   res.send('Server is running!');
