@@ -5,9 +5,11 @@ import logo from "../../assets/Images/image.png";
 import { House, Info, Phone } from "lucide-react";
 import NotificationBell from "./notificatioBell";
 import { Menu, X } from "lucide-react";
+import {  MoreVertical, User, History, LogOut } from "lucide-react";
 
 const Navbar = ({ onLogout }) => {
   const [open, setOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
 
 const handleLogout = () => {
@@ -45,26 +47,86 @@ const handleLogout = () => {
           <li><Link to="/Contact" className="hover:text-gray-300 flex items-center gap-1"><Phone size={18}/>Contact</Link></li>
 
          <NotificationBell />
-          <button 
-            className="px-2 h-10 border-2 rounded-2xl hover:bg-amber-50 hover:text-[#341C4E]" 
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+          {/* Three Dots Menu (Desktop) */}
+<div className="relative">
+  <button onClick={() => setMenuOpen(!menuOpen)}>
+    <MoreVertical />
+  </button>
+
+  {menuOpen && (
+    <div className="absolute right-0 mt-2 w-48 bg-white text-black rounded-lg shadow-lg z-50">
+      <Link
+        to="/profile"
+        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+        onClick={() => setMenuOpen(false)}
+      >
+        <User size={16} /> My Profile
+      </Link>
+
+      <Link
+        to="/token-history"
+        className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+        onClick={() => setMenuOpen(false)}
+      >
+        <History size={16} /> Token History
+      </Link>
+
+      <button
+        onClick={handleLogout}
+        className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+      >
+        <LogOut size={16} /> Logout
+      </button>
+    </div>
+  )}
+</div>
+
         </ul>
 
-       <div className="md:hidden flex items-center gap-4">
-  {/* Notification Bell (Mobile) */}
+       <div className="md:hidden flex items-center gap-4 relative">
+  {/* Notification */}
   <NotificationBell />
 
+  {/* Three Dots */}
+  <div className="relative">
+    <button className="flex justify-center items-center" onClick={() => setMenuOpen(!menuOpen)}>
+      <MoreVertical size={20} />
+    </button>
+
+    {menuOpen && (
+      <div className="absolute right-0 mt-2 w-44 bg-white text-black rounded-lg shadow-lg z-50">
+        <Link
+          to="/profile"
+          onClick={() => setMenuOpen(false)}
+          className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+        >
+          <User size={16} /> My Profile
+        </Link>
+
+        <Link
+          to="/token-history"
+          onClick={() => setMenuOpen(false)}
+          className="flex items-center gap-2 px-4 py-2 hover:bg-gray-100"
+        >
+          <History size={16} /> Token History
+        </Link>
+
+        <button
+          onClick={handleLogout}
+          className="flex items-center gap-2 w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600"
+        >
+          <LogOut size={16} /> Logout
+        </button>
+      </div>
+    )}
+  </div>
+
   {/* Hamburger */}
- <button
-  className="text-white"
-  onClick={() => setOpen(!open)}
->
-  {open ? <X size={28} /> : <Menu size={28} />}
-</button>
+  <button onClick={() => setOpen(!open)}>
+    {open ? <X size={22} /> : <Menu size={28} />}
+  </button>
 </div>
+
 
       </nav>
 
@@ -80,12 +142,7 @@ const handleLogout = () => {
           <li><Link to="/aboutus" onClick={() => setOpen(false)}>About Us</Link></li>
           <li><Link to="/contact" onClick={() => setOpen(false)}>Contact</Link></li>
           {/* Logout Mobile */}
-          <button 
-            className="px-2 h-10 border-2 rounded-2xl hover:bg-amber-50 hover:text-[#341C4E]" 
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+        
         </ul>
       )}
     </>

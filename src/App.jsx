@@ -26,6 +26,11 @@ import { socket } from "./socket";
 import { initNotificationSound } from "../src/Utils/NotificationSound";
 
 import NotificationsPage from "./Components/Navbar/NotificationPage";
+import Profile from "./Components/Navbar/Profile";
+import TokenHistory from "./Components/Navbar/TokenHistory";
+
+
+
 const AppWrapper = () => {
   const location = useLocation();
 
@@ -78,6 +83,8 @@ const AppWrapper = () => {
         <Route path="/aboutus" element={<AboutUs />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/profile" element={<Profile />} />
+<Route path="/token-history" element={<TokenHistory />} />
 
         {/* Admin Login (no layout) */}
         <Route path="/admin/login" element={<AdminLogin />} />

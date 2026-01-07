@@ -35,7 +35,7 @@ useEffect(() => {
       {
         id: Date.now(),
         serviceName: data.serviceName,
-        message: `Your token is ${data.status}`,
+        message: `Your token is  ${data.status}`,
         createdAt: data.updatedAt || new Date(),
         read: false,
       },

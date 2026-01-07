@@ -173,38 +173,7 @@ router.put("/cancel/:service/:tokenNumber", async (req, res) => {
   }
 });
 
-// router.put("/:service/status/:tokenNumber", async (req, res) => {
-//   const { service, tokenNumber } = req.params;
-//   const { status } = req.body;
 
-//   try {
-//     const TokenModel = getTokenModel(service);
-//     const token = await TokenModel.findOne({ tokenNumber });
-
-//     if (!token) return res.status(404).json({ message: "Token not found" });
-
-//     if (status === "serving" && !token.servedAt) token.servedAt = new Date();
-//     if (status === "completed") token.completedAt = new Date();
-
-//     token.status = status;
-//     await token.save();
-
-//     const io = getIO();
-
-//     // 🔹 Emit token update to this user
-//     io.to(token.userName).emit("token_updated", token);
-
-//     // 🔹 Emit notifications to current & next users in queue
-//     await notifyQueueUsers(service, io);
-
-//     res.json(token);
-//   } catch (err) {
-//     res.status(500).json({
-//       message: "Failed to update token status",
-//       error: err.message,
-//     });
-//   }
-// });
 
 router.put("/:service/status/:tokenNumber", async (req, res) => {
   const { service, tokenNumber } = req.params;
@@ -353,6 +322,37 @@ router.put("/admin/token/:id/complete", async (req, res) => {
   });
 });
 
+const services = [
+  "Admission",
+  "Library",
+  "Canteen",
+  "FeesPayment",
+  "RailwayConcession",
+  "RailwayConsession"
+];
 
+router.get("/user/:userId", async (req, res) => {
+  try {
+    const { userId } = req.params;
+    let allTokens = [];
 
+    for (const service of services) {
+      try {
+        const TokenModel = getTokenModel(service);
+        const tokens = await TokenModel.find({ userId });
+        allTokens = allTokens.concat(tokens);
+      } catch {
+        // ignore invalid service
+      }
+    }
+
+    // sort newest first
+    allTokens.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    res.json(allTokens);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 export default router;
