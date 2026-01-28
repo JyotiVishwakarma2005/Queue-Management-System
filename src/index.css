@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+li{
+ padding: 20px;
+}
+.token{
+            box-shadow: 3px 3px 5px rgb(187, 186, 186), -3px -3px 5px rgb(189, 188, 188);
+}
+
+@keyframes slideDown {
+  0% { transform: translateY(-40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.3s ease-out;
+}
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c3c7ca;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9da3a7;
+}
